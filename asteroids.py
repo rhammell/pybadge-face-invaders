@@ -138,21 +138,21 @@ class AsteroidsGame():
 
 
         # Load large asteroid sprites
-        self.asteroids_large_bitmap, self.asteroids_large_pallette = imageload('img/faces_large.bmp')
+        self.asteroids_large_bitmap, self.asteroids_large_pallette = imageload('img/face_large.bmp')
         self.asteroids_large_pallette.make_transparent(0)
-        self.asteroids_large_tile_width = 38
+        self.asteroids_large_tile_width = 40
         self.asteroids_large_tile_height = 48
 
         # Load medium asteroid sprites
-        self.asteroids_medium_bitmap, self.asteroids_medium_pallette = imageload('img/faces_medium.bmp')
+        self.asteroids_medium_bitmap, self.asteroids_medium_pallette = imageload('img/face_medium.bmp')
         self.asteroids_medium_pallette.make_transparent(0)
-        self.asteroids_medium_tile_width = 29
+        self.asteroids_medium_tile_width = 30
         self.asteroids_medium_tile_height = 36
 
         # Load small asteroid sprites
-        self.asteroids_small_bitmap, self.asteroids_small_pallette = imageload('img/faces_small.bmp')
+        self.asteroids_small_bitmap, self.asteroids_small_pallette = imageload('img/face_small.bmp')
         self.asteroids_small_pallette.make_transparent(0)
-        self.asteroids_small_tile_width = 19
+        self.asteroids_small_tile_width = 20
         self.asteroids_small_tile_height = 24
 
         # Memory garbage collect
@@ -584,7 +584,7 @@ class AsteroidsGame():
                 pixel_shader=asteroid_pallette,
                 tile_width=asteroid_tile_width,
                 tile_height=asteroid_tile_height,
-                default_tile=choice([0,1,2])
+                default_tile=choice([0])
             )
 
             # Randomly flip tilegrid around x axis
@@ -686,7 +686,7 @@ class AsteroidsGame():
                 pixel_shader=self.asteroids_large_pallette,
                 tile_width=self.asteroids_large_tile_width,
                 tile_height=self.asteroids_large_tile_height,
-                default_tile=choice([0,1,2]),
+                default_tile=choice([0]),
             )
 
             # Randomly flip tilegrid around x axis
@@ -1214,7 +1214,7 @@ class AsteroidsGame():
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
                 self.ship.thrusting = False
-                self.control_sound('end', 'thrust')
+                self.control_sound('end', 'ship_thrust')
             if self.ship.turning:
                 self.ship.turning = 0
 
@@ -1343,7 +1343,7 @@ class AsteroidsGame():
                     if self.ship.is_hit == False and asteroid.detect_hit(self.ship):
 
                             # Play/stop sounds
-                            self.control_sound('stop', 'thrust')
+                            self.control_sound('stop', 'ship_thrust')
                             self.control_sound('play', 'ship_explosion')
 
                             # Remove ship from display
