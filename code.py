@@ -7,6 +7,9 @@ from asteroids import AsteroidsGame
 display = board.DISPLAY
 display.root_group.hidden = False
 
+# Turn of display auto refresh
+display.auto_refresh = False
+
 # Turn off PyBadge LC led
 led = NeoPixel(board.NEOPIXEL, 1, auto_write=True)
 led.brightness = 0.0
@@ -65,5 +68,6 @@ while True:
         elif key.key_number == 7:
             asteroids_game.left_button_event(pressed=key.pressed)
 
-    # Call the game tick function
+    # Tick game forward and refresh display
     asteroids_game.tick()
+    display.refresh()

@@ -53,16 +53,42 @@ class AsteroidsGame():
 
     def __init__(self, board):
 
-        # Display object used by game
+        # Store board reference
         self.board = board
-
-        # Display center coordinates
+        
+        # Display initialization
         self.display = self.board.DISPLAY
         self.display_center_x = self.display.width // 2
         self.display_center_y = self.display.height // 2
 
-        # Turn of display auto refresh
-        self.display.auto_refresh = False
+        # Initialize audio system
+        self._init_audio()
+        gc_collect()
+
+        # Initialize game state variables
+        self._init_game_state()
+        gc_collect()
+        
+        # Load resources (images, sounds)
+        self._load_game_assets()
+        gc_collect()
+        
+        # Create UI elements and display groups
+        self._create_ui_elements()
+        gc_collect()
+        
+        # Create game ship
+        self._create_ship_object()
+        gc_collect()
+        
+        # Load high scores
+        self.high_scores = self.load_high_scores()
+
+        # Show start menu
+        self.start_menu()
+
+    def _init_audio(self):
+        """Initialize audio hardware and mixer"""
 
         # Enable the PyBadge speaker
         speaker_enable = DigitalInOut(self.board.SPEAKER_ENABLE)
@@ -83,10 +109,54 @@ class AsteroidsGame():
         )
         self.audio.play(self.mixer)
 
-        # Memory garbage collect
-        gc_collect()
+    def _init_game_state(self):
+        """Initialize game state variables"""
 
-        # Define mix channel and load .wav for each game sound
+        # Set and apply initial brightness
+        self.brightness = 100
+        self.set_brightness()
+        
+        # Set and apply initial volume
+        self.volume = 100
+        self.set_volume()
+        
+        # Initialize game object tracking lists
+        self.asteroids = []
+        self.particles = []
+        self.bullets = []
+        
+        # Game current level
+        self.level = 1
+        
+        # Current player lives
+        self.lives = AsteroidsGame.MAX_LIVES
+        
+        # Current game score
+        self.score = 0
+        
+        # Initialize game state variables
+        self.current_state = None
+        self.prev_state = None
+        
+        # Time of last game tick used to calculate delta time
+        self.last_tick_time = None
+        
+        # Track ship hit time
+        self.ship_hit_time = None
+        self.ship_reset_seconds = 2.5
+        
+        # Track game over pause time
+        self.game_over_time = None
+        self.game_over_seconds = 2
+        
+        # Track bullet create time
+        self.create_bullet_time = None
+        self.create_bullet_seconds = 0.25
+
+    def _load_game_assets(self):
+        """Load all game assets (sounds, images, sprites)"""
+
+        # Load game sound effects and define audio channel
         self.sounds = {
             'continue': (2, WaveFile(open('snds/continue.wav','rb'))),
             'game_over': (2, WaveFile(open('snds/game_over.wav','rb'))),
@@ -100,20 +170,6 @@ class AsteroidsGame():
             'explosion_large': (1, WaveFile(open('snds/asteroid_explosion_large.wav','rb')))
         }
 
-        # Memory garbage collect
-        gc_collect()
-
-        # Set and apply initial brightness
-        self.brightness = 100
-        self.set_brightness()
-
-        # Set and apply initial volume
-        self.volume = 100
-        self.set_volume()
-
-        # Set initial music settings
-        self.music_enable = True
-
         # Load background image
         self.background_bitmap = OnDiskBitmap('img/background.bmp')
         self.background_pallete = self.background_bitmap.pixel_shader
@@ -122,7 +178,7 @@ class AsteroidsGame():
         self.logo_bitmap = OnDiskBitmap('img/logo.bmp')
         self.logo_pallete = self.logo_bitmap.pixel_shader
         self.logo_pallete.make_transparent(0)
-
+        
         # Load player lives sprite
         self.ship_small_bitmap = OnDiskBitmap('img/ship_small.bmp')
         self.ship_small_pallette = self.ship_small_bitmap.pixel_shader
@@ -135,8 +191,7 @@ class AsteroidsGame():
         self.ships_pallette.make_transparent(0)
         self.ships_tile_width = 20
         self.ships_tile_height = 20
-
-
+        
         # Load large asteroid sprites
         self.asteroids_large_bitmap, self.asteroids_large_pallette = imageload('img/face_large.bmp')
         self.asteroids_large_pallette.make_transparent(0)
@@ -154,14 +209,14 @@ class AsteroidsGame():
         self.asteroids_small_pallette.make_transparent(0)
         self.asteroids_small_tile_width = 20
         self.asteroids_small_tile_height = 24
-
-        # Memory garbage collect
-        gc_collect()
-
+        
         # Palette colors used for display objects
         self.palette = Palette(2)
         self.palette[0] = 0xEEEEEE
         self.palette[1] = 0x000000
+
+    def _create_ui_elements(self):
+        """Create all UI elements and display groups"""
 
         # Set up main display group
         self.main_group = Group()
@@ -176,13 +231,22 @@ class AsteroidsGame():
             self.background_bitmap,
             pixel_shader=self.background_pallete
         ))
-
-        # Memory garbage collect
-        gc_collect()
-
+        
         # Game objects display group
         self.game_group = Group()
         self.main_group.append(self.game_group)
+        
+        # Create and initialize all UI groups (start menu, options, etc)
+        self._create_start_menu()
+        self._create_game_ui()
+        self._create_game_over_ui()
+        self._create_score_input_ui()
+        self._create_high_scores_ui()
+        self._create_options_menu()
+        self._create_controls_menu()
+
+    def _create_start_menu(self):
+        """Create start menu UI elements"""
 
         # Start menu display group and hide
         self.start_menu_group = Group()
@@ -204,8 +268,8 @@ class AsteroidsGame():
             y=self.display_center_y-self.logo_bitmap.height//2-10
         ))
 
-        # Memory garbage collect
-        gc_collect()
+    def _create_game_ui(self):
+        """ Create game user interface elements """
 
         # UI display group and hide
         self.ui_group = Group()
@@ -234,8 +298,9 @@ class AsteroidsGame():
             self.lives_tilegrids.append(live_tilegrid)
             self.ui_group.append(live_tilegrid)
 
-        # Memory garbage collect
-        gc_collect()
+
+    def _create_game_over_ui(self):
+        """ Create game over user interface elements """
 
         # Game over display group and hide
         self.game_over_group = Group()
@@ -262,8 +327,8 @@ class AsteroidsGame():
         self.game_over_group.append(self.game_over_text_group)
         self.game_over_text_group.hidden = True
 
-        # Memory garbage collect
-        gc_collect()
+    def _create_score_input_ui(self):
+        """ Create score input user interface elements """
 
         # Score entry display group and hide
         self.score_input_group = Group()
@@ -317,8 +382,8 @@ class AsteroidsGame():
         self.current_initial = 0
         self.update_initials_cursor()
 
-        # Memory garbage collect
-        gc_collect()
+    def _create_high_scores_ui(self):
+        """ Create high score interface elements """
 
         # High scores display group and hide
         self.high_scores_group = Group()
@@ -376,8 +441,8 @@ class AsteroidsGame():
             self.high_scores_group.append(score_number)
             self.high_scores_numbers.append(score_number)
 
-        # Memory garbage collect
-        gc_collect()
+    def _create_options_menu(self):
+        """ Create game options interface elements """
 
         # Options menu display group and hide
         self.options_menu_group = Group()
@@ -439,8 +504,8 @@ class AsteroidsGame():
         self.current_option = 0
         self.update_options_cursor()
 
-        # Memory garbage collect
-        gc_collect()
+    def _create_controls_menu(self):
+        """ Create controls menu elements """
 
         # Controls menu display group and hide
         self.controls_menu_group = Group()
@@ -490,8 +555,9 @@ class AsteroidsGame():
                 anchored_position=(self.display_center_x-2, 40+i*15)
             ))
 
-        # Memory garbage collect
-        gc_collect()
+
+    def _create_ship_object(self):
+        """Create game ship object"""
 
         # Create ship object and add to display group
         self.ship = Ship(
@@ -510,50 +576,8 @@ class AsteroidsGame():
         )
         self.game_group.append(self.ship.tilegrid)
 
-        # Memory garbage collect
-        gc_collect()
-
         # Initially hide ship
         self.ship.hidden = True
-
-        # Track ship hit time
-        self.ship_hit_time = None
-        self.ship_reset_seconds = 2.5
-
-        # Initialize game object tracking lists
-        self.asteroids = []
-        self.particles = []
-        self.bullets = []
-
-        # Track game over pause time
-        self.game_over_time = None
-        self.game_over_seconds = 2
-
-        # Track bullet create time
-        self.create_bullet_time = None
-        self.create_bullet_seconds = 0.25
-
-        # Game current level
-        self.level = 1
-
-        # Current player lives
-        self.lives = AsteroidsGame.MAX_LIVES
-
-        # Current game score
-        self.score = 0
-
-        # Initialize game state variables
-        self.current_state = None
-        self.prev_state = None
-
-        # Time of last game tick used to calculate delta time
-        self.last_tick_time = None
-
-        # Load high score data
-        self.high_scores = self.load_high_scores()
-
-        # Show start menu
-        self.start_menu()
 
 
     def create_sub_asteroids(self, asteroid):
@@ -766,9 +790,6 @@ class AsteroidsGame():
         self.high_scores_group.hidden = True
         self.start_menu_group.hidden = False
 
-        # Refresh display
-        self.display.refresh()
-
     def options_menu(self):
         '''
         Show options menu graphics.
@@ -782,9 +803,6 @@ class AsteroidsGame():
         else:
             self.current_state = self.prev_state
             self.options_menu_group.hidden = True
-
-        # Refresh display
-        self.display.refresh()
 
     def controls_menu(self):
         '''
@@ -800,9 +818,6 @@ class AsteroidsGame():
             self.current_state = self.prev_state
             self.controls_menu_group.hidden = True
 
-        # Refresh display
-        self.display.refresh()
-
     def new_game(self):
         '''
         New Game
@@ -817,9 +832,6 @@ class AsteroidsGame():
         self.game_over_group.hidden = True
         self.high_scores_group.hidden = True
         self.score_input_group.hidden = True
-
-        # Refresh display
-        self.display.refresh()
 
         # Reset ship position
         self.ship.reset(x=self.display_center_x, y=self.display_center_y)
@@ -847,9 +859,6 @@ class AsteroidsGame():
         # Create asteroids
         self.create_asteroid_wave(self.level)
 
-        # Refresh display
-        self.display.refresh()
-
     def score_input_menu(self):
         '''
         High scores menu
@@ -864,9 +873,6 @@ class AsteroidsGame():
         self.game_over_group.hidden = True
         self.high_scores_group.hidden = True
         self.score_input_group.hidden = False
-
-        # Refresh display
-        self.display.refresh()
 
     def high_scores_menu(self):
         '''
@@ -888,9 +894,6 @@ class AsteroidsGame():
         self.score_input_group.hidden = True
         self.high_scores_group.hidden = False
 
-        # Refresh display
-        self.display.refresh()
-
     def game_over(self):
         '''
         Game over menu
@@ -905,9 +908,6 @@ class AsteroidsGame():
         self.score_input_group.hidden = True
         self.high_scores_group.hidden = True
         self.game_over_group.hidden = False
-
-        # Refresh display
-        self.display.refresh()
 
     def update_high_scores(self, ):
         '''
@@ -1310,10 +1310,8 @@ class AsteroidsGame():
         current_tick_time = monotonic()
         delta_time = current_tick_time - self.last_tick_time if self.last_tick_time else 0.02
         self.last_tick_time = current_tick_time
-        #if delta_time > 0:
-        #    print(1 / delta_time )
-        gc_collect()
-        print( mem_free() )
+        #gc_collect()
+        #print( mem_free() )
 
         # If options/controls menu is not open, process game objects
         if self.current_state not in [AsteroidsGame.STATE_OPTIONS_MENU, AsteroidsGame.STATE_CONTROLS_MENU]:
@@ -1360,9 +1358,8 @@ class AsteroidsGame():
                             self.display_lives()
 
                     # Detect bullet hit
-                    if asteroid.is_hit == False:
-                        for bullet in [bullet for bullet in self.bullets if bullet.is_hit == False]:
-
+                    if not asteroid.is_hit:
+                        for bullet in [b for b in self.bullets if b.is_hit == False]:
                             if asteroid.detect_hit(bullet):
                                 break
 
@@ -1452,9 +1449,6 @@ class AsteroidsGame():
                 # Initiate next wave of asteroids
                 self.level += 1
                 self.create_asteroid_wave(min(self.level, 3))
-
-        # Refresh display
-        self.display.refresh()
 
 class SpaceTilegrid:
     '''
