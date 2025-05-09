@@ -4,7 +4,7 @@ from json import dump as json_dump
 from random import randrange, choice
 from gc import collect as gc_collect
 from gc import mem_free
-from math import sin, cos, radians, pi, sqrt, atan2, degrees
+from math import sin, cos, radians
 from adafruit_imageload import load as imageload
 from terminalio import FONT
 from displayio import Group, TileGrid, OnDiskBitmap, Palette
@@ -13,43 +13,17 @@ from audiocore import WaveFile
 from audioio import AudioOut
 from audiomixer import Mixer
 from adafruit_display_text import label, bitmap_label
-from adafruit_display_shapes.line import Line
 from adafruit_display_shapes.triangle import Triangle
-from vectorio import Rectangle, Circle
+from vectorio import Rectangle
 
+from face_invaders.space_objects import Ship, Face
+from face_invaders.space_particles import RectParticle, LineParticle, Bullet
+from face_invaders import constants as C
 
-class AsteroidsGame():
+class FaceInvadersGame():
     '''
     This class
     '''
-
-    # Game state variables
-    STATE_START_MENU = 0
-    STATE_ACTIVE_GAME = 1
-    STATE_OPTIONS_MENU = 2
-    STATE_CONTROLS_MENU = 3
-    STATE_GAME_OVER = 4
-    STATE_SCORE_INPUT = 5
-    STATE_HIGH_SCORES = 6
-
-    # High scores filename
-    HIGH_SCORES_FNAME = 'scores.json'
-
-    # Maximum number of saved scores
-    NUM_HIGH_SCORES = 5
-
-    # Maximum player lives
-    MAX_LIVES = 3
-
-    # Asteroid points
-    ASTEROID_POINTS = {
-        1: 20,
-        2: 50,
-        3: 100
-    }
-
-    # Player initial characters
-    CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
     def __init__(self, board):
 
@@ -117,11 +91,11 @@ class AsteroidsGame():
         self.set_brightness()
         
         # Set and apply initial volume
-        self.volume = 100
+        self.volume = 0
         self.set_volume()
         
         # Initialize game object tracking lists
-        self.asteroids = []
+        self.faces = []
         self.particles = []
         self.bullets = []
         
@@ -129,7 +103,7 @@ class AsteroidsGame():
         self.level = 1
         
         # Current player lives
-        self.lives = AsteroidsGame.MAX_LIVES
+        self.lives = C.MAX_LIVES
         
         # Current game score
         self.score = 0
@@ -143,72 +117,72 @@ class AsteroidsGame():
         
         # Track ship hit time
         self.ship_hit_time = None
-        self.ship_reset_seconds = 2.5
+        self.ship_reset_seconds = C.SHIP_RESET_SECONDS
         
         # Track game over pause time
         self.game_over_time = None
-        self.game_over_seconds = 2
+        self.game_over_seconds = C.GAME_OVER_SECONDS
         
         # Track bullet create time
         self.create_bullet_time = None
-        self.create_bullet_seconds = 0.25
+        self.create_bullet_seconds = C.CREATE_BULLET_SECONDS
 
     def _load_game_assets(self):
         """Load all game assets (sounds, images, sprites)"""
 
         # Load game sound effects and define audio channel
         self.sounds = {
-            'continue': (2, WaveFile(open('snds/continue.wav','rb'))),
-            'game_over': (2, WaveFile(open('snds/game_over.wav','rb'))),
-            'new_ship': (2, WaveFile(open('snds/new_ship.wav','rb'))),
-            'bullet': (0, WaveFile(open('snds/bullet.wav','rb'))),
-            'click': (0, WaveFile(open('snds/click.wav','rb'))),
-            'ship_thrust': (0, WaveFile(open('snds/ship_thrust.wav','rb'))),
-            'ship_explosion': (1, WaveFile(open('snds/ship_explosion.wav','rb'))),
-            'explosion_small': (1, WaveFile(open('snds/asteroid_explosion_small.wav','rb'))),
-            'explosion_medium': (1, WaveFile(open('snds/asteroid_explosion_medium.wav','rb'))),
-            'explosion_large': (1, WaveFile(open('snds/asteroid_explosion_large.wav','rb')))
+            'continue': (2, WaveFile(open('face_invaders/snds/continue.wav','rb'))),
+            'game_over': (2, WaveFile(open('face_invaders/snds/game_over.wav','rb'))),
+            'new_ship': (2, WaveFile(open('face_invaders/snds/new_ship.wav','rb'))),
+            'bullet': (0, WaveFile(open('face_invaders/snds/bullet.wav','rb'))),
+            'click': (0, WaveFile(open('face_invaders/snds/click.wav','rb'))),
+            'ship_thrust': (0, WaveFile(open('face_invaders/snds/ship_thrust.wav','rb'))),
+            'ship_explosion': (1, WaveFile(open('face_invaders/snds/ship_explosion.wav','rb'))),
+            'explosion_small': (1, WaveFile(open('face_invaders/snds/face_explosion_small.wav','rb'))),
+            'explosion_medium': (1, WaveFile(open('face_invaders/snds/face_explosion_medium.wav','rb'))),
+            'explosion_large': (1, WaveFile(open('face_invaders/snds/face_explosion_large.wav','rb')))
         }
 
         # Load background image
-        self.background_bitmap = OnDiskBitmap('img/background.bmp')
+        self.background_bitmap = OnDiskBitmap('face_invaders/img/background.bmp')
         self.background_pallete = self.background_bitmap.pixel_shader
 
         # Load logo image
-        self.logo_bitmap = OnDiskBitmap('img/logo.bmp')
+        self.logo_bitmap = OnDiskBitmap('face_invaders/img/logo.bmp')
         self.logo_pallete = self.logo_bitmap.pixel_shader
         self.logo_pallete.make_transparent(0)
         
         # Load player lives sprite
-        self.ship_small_bitmap = OnDiskBitmap('img/ship_small.bmp')
+        self.ship_small_bitmap = OnDiskBitmap('face_invaders/img/ship_small.bmp')
         self.ship_small_pallette = self.ship_small_bitmap.pixel_shader
         self.ship_small_pallette.make_transparent(0)
         self.ship_small_tile_width = self.ship_small_bitmap.width
         self.ship_small_tile_height = self.ship_small_bitmap.height
 
         # Load ship sprites
-        self.ships_bitmap, self.ships_pallette = imageload('img/ships.bmp')
+        self.ships_bitmap, self.ships_pallette = imageload('face_invaders/img/ships.bmp')
         self.ships_pallette.make_transparent(0)
         self.ships_tile_width = 20
         self.ships_tile_height = 20
         
-        # Load large asteroid sprites
-        self.asteroids_large_bitmap, self.asteroids_large_pallette = imageload('img/face_large.bmp')
-        self.asteroids_large_pallette.make_transparent(0)
-        self.asteroids_large_tile_width = 40
-        self.asteroids_large_tile_height = 48
+        # Load large face sprites
+        self.faces_large_bitmap, self.faces_large_pallette = imageload('face_invaders/img/face_large.bmp')
+        self.faces_large_pallette.make_transparent(0)
+        self.faces_large_tile_width = 40
+        self.faces_large_tile_height = 48
 
-        # Load medium asteroid sprites
-        self.asteroids_medium_bitmap, self.asteroids_medium_pallette = imageload('img/face_medium.bmp')
-        self.asteroids_medium_pallette.make_transparent(0)
-        self.asteroids_medium_tile_width = 30
-        self.asteroids_medium_tile_height = 36
+        # Load medium face sprites
+        self.faces_medium_bitmap, self.faces_medium_pallette = imageload('face_invaders/img/face_medium.bmp')
+        self.faces_medium_pallette.make_transparent(0)
+        self.faces_medium_tile_width = 30
+        self.faces_medium_tile_height = 36
 
-        # Load small asteroid sprites
-        self.asteroids_small_bitmap, self.asteroids_small_pallette = imageload('img/face_small.bmp')
-        self.asteroids_small_pallette.make_transparent(0)
-        self.asteroids_small_tile_width = 20
-        self.asteroids_small_tile_height = 24
+        # Load small face sprites
+        self.faces_small_bitmap, self.faces_small_pallette = imageload('face_invaders/img/face_small.bmp')
+        self.faces_small_pallette.make_transparent(0)
+        self.faces_small_tile_width = 20
+        self.faces_small_tile_height = 24
         
         # Palette colors used for display objects
         self.palette = Palette(2)
@@ -409,7 +383,7 @@ class AsteroidsGame():
         # Create high scores table elements
         self.high_scores_names = []
         self.high_scores_numbers = []
-        for i in range(AsteroidsGame.NUM_HIGH_SCORES):
+        for i in range(C.NUM_HIGH_SCORES):
             # Score rank
             self.high_scores_group.append(label.Label(
                 FONT,
@@ -579,69 +553,68 @@ class AsteroidsGame():
         # Initially hide ship
         self.ship.hidden = True
 
-
-    def create_sub_asteroids(self, asteroid):
+    def create_sub_faces(self, face):
         '''
-        Create sub asteroids
+        Create sub faces
         '''
-        # Determine size of sub asteroids
-        sub_asteroid_size = asteroid.size + 1
+        # Determine size of sub faces
+        sub_face_size = face.size + 1
 
-        # Determine asteroid sprites based on size
-        if sub_asteroid_size == 2:
-            asteroid_bitmap = self.asteroids_medium_bitmap
-            asteroid_pallette = self.asteroids_medium_pallette
-            asteroid_tile_width = self.asteroids_medium_tile_width
-            asteroid_tile_height = self.asteroids_medium_tile_height
-        elif sub_asteroid_size == 3:
-            asteroid_bitmap = self.asteroids_small_bitmap
-            asteroid_pallette = self.asteroids_small_pallette
-            asteroid_tile_width = self.asteroids_small_tile_width
-            asteroid_tile_height = self.asteroids_small_tile_height
+        # Determine face sprites based on size
+        if sub_face_size == 2:
+            face_bitmap = self.faces_medium_bitmap
+            face_pallette = self.faces_medium_pallette
+            face_tile_width = self.faces_medium_tile_width
+            face_tile_height = self.faces_medium_tile_height
+        elif sub_face_size == 3:
+            face_bitmap = self.faces_small_bitmap
+            face_pallette = self.faces_small_pallette
+            face_tile_width = self.faces_small_tile_width
+            face_tile_height = self.faces_small_tile_height
 
-        # Create two sub asteroids
+        # Create two sub faces
         for i in range(2):
 
-            # Define asteroid tilegrid
-            sub_asteroid_tilegrid = TileGrid(
-                asteroid_bitmap,
-                pixel_shader=asteroid_pallette,
-                tile_width=asteroid_tile_width,
-                tile_height=asteroid_tile_height,
+            # Define face tilegrid
+            sub_face_tilegrid = TileGrid(
+                face_bitmap,
+                pixel_shader=face_pallette,
+                tile_width=face_tile_width,
+                tile_height=face_tile_height,
                 default_tile=choice([0])
             )
 
             # Randomly flip tilegrid around x axis
-            sub_asteroid_tilegrid.flip_x = choice([True, False])
+            sub_face_tilegrid.flip_x = choice([True, False])
 
-            # Define settings based on input asteroid
-            x = asteroid.x
-            y = asteroid.y
-            v = asteroid.v * (1.1 + self.level * .05)
-            angle = asteroid.angle + (radians(randrange(15,70) * (-1 if i == 0 else 1)))
+            # Define settings based on input face
+            x = face.x
+            y = face.y
+            v = face.v * (1.1 + self.level * .05)
+            angle = face.angle + (radians(randrange(15,70) * (-1 if i == 0 else 1)))
 
-            # Create asteroid object and update
-            sub_asteroid = Asteroid(
-                sub_asteroid_tilegrid,
+            # Create face object and update
+            sub_face = Face(
+                sub_face_tilegrid,
                 self.display,
                 x=x,
                 y=y,
                 v=v,
                 angle=angle,
-                size=sub_asteroid_size
+                size=sub_face_size
             )
-            sub_asteroid.update()
+            sub_face.update()
 
-            # Track and display asteroid
-            self.asteroids.append(sub_asteroid)
-            self.game_group.append(sub_asteroid.tilegrid)
+            # Track and display face
+            self.faces.append(sub_face)
+            self.game_group.append(sub_face.tilegrid)
 
     def create_hit_particles(self, obj):
         '''
         Create particles
         '''
 
-        # Flag if object is ship or asteroid
+        # Flag if object is ship or face
         is_ship = isinstance(obj, Ship)
 
         # Create 5 particles
@@ -696,29 +669,29 @@ class AsteroidsGame():
                 self.particles.append(particle)
                 self.game_group.append(particle.shape)
 
-    def create_asteroid_wave(self, count):
+    def create_face_wave(self, count):
         '''
-        Create wave of asteroids
+        Create wave of faces
         '''
 
-        # Loop through asteroid count
+        # Loop through face count
         for i in range(count):
 
-            # Define astroid tilegrid using large asteroid sprites
-            asteroid_tilegrid = TileGrid(
-                self.asteroids_large_bitmap,
-                pixel_shader=self.asteroids_large_pallette,
-                tile_width=self.asteroids_large_tile_width,
-                tile_height=self.asteroids_large_tile_height,
+            # Define astroid tilegrid using large face sprites
+            face_tilegrid = TileGrid(
+                self.faces_large_bitmap,
+                pixel_shader=self.faces_large_pallette,
+                tile_width=self.faces_large_tile_width,
+                tile_height=self.faces_large_tile_height,
                 default_tile=choice([0]),
             )
 
             # Randomly flip tilegrid around x axis
-            asteroid_tilegrid.flip_x = choice([True, False])
+            face_tilegrid.flip_x = choice([True, False])
 
             # Calculate random start position along the display border
-            border_x = asteroid_tilegrid.width * asteroid_tilegrid.tile_width // 2
-            border_y = asteroid_tilegrid.height * asteroid_tilegrid.tile_height // 2
+            border_x = face_tilegrid.width * face_tilegrid.tile_width // 2
+            border_y = face_tilegrid.height * face_tilegrid.tile_height // 2
             x_min = -border_x
             x_max = self.display.width + border_x
             y_min = -border_y
@@ -730,13 +703,13 @@ class AsteroidsGame():
                 (x_max, randrange(y_min,y_max))
             ])
 
-            # Randomize asteroid velocity and angle
+            # Randomize face velocity and angle
             v = randrange(10,30)
             angle = radians(randrange(360))
 
-            # Create asteroid object
-            asteroid = Asteroid(
-                asteroid_tilegrid,
+            # Create face object
+            face = Face(
+                face_tilegrid,
                 self.display,
                 x=start_position[0],
                 y=start_position[1],
@@ -746,18 +719,18 @@ class AsteroidsGame():
             )
 
             # Track and display astreroid
-            self.asteroids.append(asteroid)
-            self.game_group.append(asteroid.tilegrid)
+            self.faces.append(face)
+            self.game_group.append(face.tilegrid)
 
     def clear_game_elements(self):
         '''
-        Clear asteroid/bullet/particle elements from tracking and display
+        Clear face/bullet/particle elements from tracking and display
         '''
 
-        # Clear asteroids from display and tracking
-        for asteroid in self.asteroids:
-            self.game_group.remove(asteroid.tilegrid)
-        self.asteroids.clear()
+        # Clear faces from display and tracking
+        for face in self.faces:
+            self.game_group.remove(face.tilegrid)
+        self.faces.clear()
 
         # Clear particles from display and tracking
         for particle in self.particles:
@@ -775,13 +748,13 @@ class AsteroidsGame():
         '''
 
         # Update current game state
-        self.current_state = AsteroidsGame.STATE_START_MENU
+        self.current_state = C.STATE_START_MENU
 
-        # Clear asteroid/particles/bullets
+        # Clear face/particles/bullets
         self.clear_game_elements()
 
-        # Create background asteroids
-        self.create_asteroid_wave(4)
+        # Create background faces
+        self.create_face_wave(4)
 
         # Show/hide required display groups
         self.ui_group.hidden = True
@@ -796,9 +769,9 @@ class AsteroidsGame():
         '''
 
         # Update current game state and show/hide options menu
-        if self.current_state != AsteroidsGame.STATE_OPTIONS_MENU:
+        if self.current_state != C.STATE_OPTIONS_MENU:
             self.prev_state = self.current_state
-            self.current_state = AsteroidsGame.STATE_OPTIONS_MENU
+            self.current_state = C.STATE_OPTIONS_MENU
             self.options_menu_group.hidden = False
         else:
             self.current_state = self.prev_state
@@ -810,9 +783,9 @@ class AsteroidsGame():
         '''
 
         # Update current game state and show/hide controls menu
-        if self.current_state != AsteroidsGame.STATE_CONTROLS_MENU:
+        if self.current_state != C.STATE_CONTROLS_MENU:
             self.prev_state = self.current_state
-            self.current_state = AsteroidsGame.STATE_CONTROLS_MENU
+            self.current_state = C.STATE_CONTROLS_MENU
             self.controls_menu_group.hidden = False
         else:
             self.current_state = self.prev_state
@@ -824,7 +797,7 @@ class AsteroidsGame():
         '''
 
         # Update current game state
-        self.current_state = AsteroidsGame.STATE_ACTIVE_GAME
+        self.current_state = C.STATE_ACTIVE_GAME
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -842,10 +815,10 @@ class AsteroidsGame():
 
         # Reset game settings
         self.level = 1
-        self.lives = AsteroidsGame.MAX_LIVES
+        self.lives = C.MAX_LIVES
         self.score = 0
 
-        # Clear asteroid/particles/bullets
+        # Clear face/particles/bullets
         self.clear_game_elements()
 
         # Update UI elements
@@ -856,8 +829,8 @@ class AsteroidsGame():
         self.current_initial = 0
         self.update_initials_cursor()
 
-        # Create asteroids
-        self.create_asteroid_wave(self.level)
+        # Create faces
+        self.create_face_wave(self.level)
 
     def score_input_menu(self):
         '''
@@ -865,7 +838,7 @@ class AsteroidsGame():
         '''
 
         # Update current game state
-        self.current_state = AsteroidsGame.STATE_SCORE_INPUT
+        self.current_state = C.STATE_SCORE_INPUT
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -880,7 +853,7 @@ class AsteroidsGame():
         '''
 
         # Update current game state
-        self.current_state = AsteroidsGame.STATE_HIGH_SCORES
+        self.current_state = C.STATE_HIGH_SCORES
 
         # Update display elements with scores
         for i, high_score in enumerate(self.high_scores):
@@ -900,7 +873,7 @@ class AsteroidsGame():
         '''
 
         # Update current game state
-        self.current_state = AsteroidsGame.STATE_GAME_OVER
+        self.current_state = C.STATE_GAME_OVER
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -933,7 +906,7 @@ class AsteroidsGame():
 
         # Load high scores json file
         try:
-            with open(AsteroidsGame.HIGH_SCORES_FNAME, 'r') as file:
+            with open(C.HIGH_SCORES_FNAME, 'r') as file:
                 high_scores = json_load(file)
 
         # If load fails (does not exist), create empty list
@@ -946,7 +919,7 @@ class AsteroidsGame():
         ''' Save high score list to local storage '''
 
         # Write high score list to output json file
-        with open(AsteroidsGame.HIGH_SCORES_FNAME, 'w') as f:
+        with open(C.HIGH_SCORES_FNAME, 'w') as f:
             json_dump(self.high_scores, f)
 
     def check_high_score(self):
@@ -954,7 +927,7 @@ class AsteroidsGame():
         Check if input score is higher than
         any other current high score and return True
         '''
-        if len(self.high_scores) < AsteroidsGame.NUM_HIGH_SCORES:
+        if len(self.high_scores) < C.NUM_HIGH_SCORES:
             return True
         else:
             for _, high_score in self.high_scores:
@@ -1015,12 +988,12 @@ class AsteroidsGame():
         # Get next input character based on current character and direction
         current_char = self.initial_inputs[self.current_initial].text
         if current_char == '_':
-            next_char = AsteroidsGame.CHARACTERS[0] if backwards == False else  AsteroidsGame.CHARACTERS[-1]
+            next_char = C.CHARACTERS[0] if backwards == False else  C.CHARACTERS[-1]
         else:
-            char_index = AsteroidsGame.CHARACTERS.index(current_char)
+            char_index = C.CHARACTERS.index(current_char)
             dir = 1 if backwards == False else -1
-            next_char_index = (char_index + dir) % len(AsteroidsGame.CHARACTERS)
-            next_char = AsteroidsGame.CHARACTERS[next_char_index]
+            next_char_index = (char_index + dir) % len(C.CHARACTERS)
+            next_char = C.CHARACTERS[next_char_index]
 
         # Update intial input text
         self.initial_inputs[self.current_initial].text = next_char
@@ -1110,14 +1083,14 @@ class AsteroidsGame():
         '''
 
         # Game in start menu state and button pressed
-        if self.current_state == AsteroidsGame.STATE_START_MENU and pressed:
+        if self.current_state == C.STATE_START_MENU and pressed:
 
             # Begin new game and play continue sound
             self.new_game()
             self.control_sound('play', 'new_ship')
 
         # Game in active play state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_ACTIVE_GAME and pressed and self.ship.hidden == False:
+        elif self.current_state == C.STATE_ACTIVE_GAME and pressed and self.ship.hidden == False:
 
             # Create bullet object
             now = monotonic()
@@ -1127,7 +1100,7 @@ class AsteroidsGame():
                 self.control_sound('play', 'bullet')
 
         # Game in game over state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_GAME_OVER and pressed:
+        elif self.current_state == C.STATE_GAME_OVER and pressed:
 
             # Check if text instructions are displayed after delay
             if self.game_over_text_group.hidden == False:
@@ -1141,7 +1114,7 @@ class AsteroidsGame():
                 self.control_sound('play', 'continue')
 
         # Game in score input state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
 
             # Confirm selected character and proceed to next initial or
             # high scores menu
@@ -1149,7 +1122,7 @@ class AsteroidsGame():
             self.control_sound('play', 'continue')
 
         # Game in high score state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_HIGH_SCORES and pressed:
+        elif self.current_state == C.STATE_HIGH_SCORES and pressed:
 
             # Start new game and play continue sound
             self.start_menu()
@@ -1162,7 +1135,7 @@ class AsteroidsGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == AsteroidsGame.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
             # Enable ship thrusing and sound when button pressed
             if pressed:
@@ -1175,7 +1148,7 @@ class AsteroidsGame():
                 self.control_sound('end', 'ship_thrust')
 
         # Game in score input state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
 
             # Select the previous initial and update cursor
             if self.current_initial > 0:
@@ -1189,7 +1162,7 @@ class AsteroidsGame():
         '''
 
         # Controls menu is not open and select button pressed
-        if self.current_state != AsteroidsGame.STATE_CONTROLS_MENU and pressed:
+        if self.current_state != C.STATE_CONTROLS_MENU and pressed:
 
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
@@ -1209,7 +1182,7 @@ class AsteroidsGame():
         '''
 
         # Options menu is not open and select button pressed
-        if self.current_state != AsteroidsGame.STATE_OPTIONS_MENU and pressed:
+        if self.current_state != C.STATE_OPTIONS_MENU and pressed:
 
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
@@ -1229,13 +1202,13 @@ class AsteroidsGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == AsteroidsGame.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
             # Set ship turing flag left based on key press or release
             self.ship.turning = -1  if pressed else 0
 
         # Game in options menu state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_OPTIONS_MENU and pressed:
+        elif self.current_state == C.STATE_OPTIONS_MENU and pressed:
 
             # Update selected option value and play click sound
             self.update_option(decrease=True)
@@ -1248,13 +1221,13 @@ class AsteroidsGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == AsteroidsGame.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
             # Set ship turing flag right based on key press or release
             self.ship.turning = 1 if pressed else 0
 
         # Game in options menu state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_OPTIONS_MENU and pressed:
+        elif self.current_state == C.STATE_OPTIONS_MENU and pressed:
 
             # Update selected option value and play click sound
             self.update_option()
@@ -1267,14 +1240,14 @@ class AsteroidsGame():
         '''
 
         # Game in options menu state and button pressed
-        if self.current_state == AsteroidsGame.STATE_OPTIONS_MENU and pressed:
+        if self.current_state == C.STATE_OPTIONS_MENU and pressed:
 
             # Update selected option and cursor position
             self.current_option = (self.current_option + 1) % len(self.option_values)
             self.update_options_cursor()
 
         # Game in score input state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
 
             # Update initial input with next character
             self.update_char()
@@ -1287,14 +1260,14 @@ class AsteroidsGame():
         '''
 
         # Game in options menu state and button pressed
-        if self.current_state == AsteroidsGame.STATE_OPTIONS_MENU and pressed:
+        if self.current_state == C.STATE_OPTIONS_MENU and pressed:
 
             # Update selected option and cursor position
             self.current_option = (self.current_option - 1) % len(self.option_values)
             self.update_options_cursor()
 
         # Game in score input state and button pressed
-        elif self.current_state == AsteroidsGame.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
 
             # Update initial input with previous character
             self.update_char(backwards=True)
@@ -1314,14 +1287,14 @@ class AsteroidsGame():
         #print( mem_free() )
 
         # If options/controls menu is not open, process game objects
-        if self.current_state not in [AsteroidsGame.STATE_OPTIONS_MENU, AsteroidsGame.STATE_CONTROLS_MENU]:
+        if self.current_state not in [C.STATE_OPTIONS_MENU, C.STATE_CONTROLS_MENU]:
 
             # Update ship position and rotation
             self.ship.update(delta_time)
 
-            # Update asteroids position
-            for asteroid in self.asteroids:
-                asteroid.update(delta_time)
+            # Update faces position
+            for face in self.faces:
+                face.update(delta_time)
 
             # Update bullet positions and age
             for bullet in self.bullets:
@@ -1332,13 +1305,13 @@ class AsteroidsGame():
                 paritcle.update(delta_time)
 
             # Process active gameplay state
-            if self.current_state == AsteroidsGame.STATE_ACTIVE_GAME:
+            if self.current_state == C.STATE_ACTIVE_GAME:
 
-                # Check for collisions between asteroids and ship/bullets
-                for asteroid in self.asteroids:
+                # Check for collisions between faces and ship/bullets
+                for face in self.faces:
 
                     # Detect ship hit
-                    if self.ship.is_hit == False and asteroid.detect_hit(self.ship):
+                    if self.ship.is_hit == False and face.detect_hit(self.ship):
 
                             # Play/stop sounds
                             self.control_sound('stop', 'ship_thrust')
@@ -1358,33 +1331,33 @@ class AsteroidsGame():
                             self.display_lives()
 
                     # Detect bullet hit
-                    if not asteroid.is_hit:
+                    if not face.is_hit:
                         for bullet in [b for b in self.bullets if b.is_hit == False]:
-                            if asteroid.detect_hit(bullet):
+                            if face.detect_hit(bullet):
                                 break
 
-                    # Process asteroid hit
-                    if asteroid.is_hit:
+                    # Process face hit
+                    if face.is_hit:
 
                         # Play explosion sound based on size
                         if self.ship.is_hit == False:
-                            if asteroid.size == 1:
+                            if face.size == 1:
                                 self.control_sound('play', 'explosion_large')
-                            elif asteroid.size == 2:
+                            elif face.size == 2:
                                 self.control_sound('play', 'explosion_medium')
-                            elif asteroid.size == 3:
+                            elif face.size == 3:
                                 self.control_sound('play', 'explosion_small')
 
                         # Update score
-                        self.score += AsteroidsGame.ASTEROID_POINTS[asteroid.size]
+                        self.score += C.FACE_POINTS[face.size]
                         self.display_score()
 
                         # Create debris particles
-                        self.create_hit_particles(asteroid)
+                        self.create_hit_particles(face)
 
-                        # Create sub asteroids
-                        if asteroid.size < 3:
-                            self.create_sub_asteroids(asteroid)
+                        # Create sub faces
+                        if face.size < 3:
+                            self.create_sub_faces(face)
 
                 # Process hit ship
                 if self.ship.is_hit:
@@ -1395,12 +1368,12 @@ class AsteroidsGame():
                         # Check if reset period has elapsed
                         if monotonic() - self.ship_hit_time > self.ship_reset_seconds:
 
-                            # Determine if asteroids are blocking reset postion
+                            # Determine if faces are blocking reset postion
                             buffer = 30
                             blocked = False
-                            for asteroid in self.asteroids:
-                                if self.display_center_x-buffer <= asteroid.x <= self.display_center_x+buffer and \
-                                   self.display_center_y-buffer <= asteroid.y <= self.display_center_y+buffer:
+                            for face in self.faces:
+                                if self.display_center_x-buffer <= face.x <= self.display_center_x+buffer and \
+                                   self.display_center_y-buffer <= face.y <= self.display_center_y+buffer:
                                     blocked = True
                                     break
 
@@ -1419,17 +1392,17 @@ class AsteroidsGame():
                         self.control_sound('play', 'game_over')
 
             # Process game over game step
-            elif self.current_state == AsteroidsGame.STATE_GAME_OVER:
+            elif self.current_state == C.STATE_GAME_OVER:
 
                 # Show game over text instructions after delay has passed
                 if self.game_over_text_group.hidden and monotonic() - self.game_over_time > self.game_over_seconds:
                     self.game_over_text_group.hidden = False
 
-            # Clear hit asteroids from tracking and display
-            hit_asteroids = [asteroid for asteroid in self.asteroids if asteroid.is_hit]
-            for asteroid in hit_asteroids:
-                self.game_group.remove(asteroid.tilegrid)
-                self.asteroids.remove(asteroid)
+            # Clear hit faces from tracking and display
+            hit_faces = [face for face in self.faces if face.is_hit]
+            for face in hit_faces:
+                self.game_group.remove(face.tilegrid)
+                self.faces.remove(face)
 
             # Clear expired particles from tracking and display
             expired_particles = [particle for particle in self.particles if particle.check_expired()]
@@ -1443,462 +1416,9 @@ class AsteroidsGame():
                 self.game_group.remove(bullet.shape)
                 self.bullets.remove(bullet)
 
-            # Check if all asteroids destroyed
-            if len(self.asteroids) == 0:
+            # Check if all faces destroyed
+            if len(self.faces) == 0:
 
-                # Initiate next wave of asteroids
+                # Initiate next wave of faces
                 self.level += 1
-                self.create_asteroid_wave(min(self.level, 3))
-
-class SpaceTilegrid:
-    '''
-    Class
-    '''
-
-    def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0):
-        # Tilegrid
-        self.tilegrid = tilegrid
-
-        # Display object - dimensions used for position wrapping
-        self.display = display
-
-        # Object movement parameters
-        self.x = x
-        self.y = y
-        self.v = v
-        self.angle = angle
-
-        # Pixel height and width of the tilegrid
-        self.display_width = tilegrid.width * tilegrid.tile_width
-        self.display_height = tilegrid.height * tilegrid.tile_height
-
-        # Flag designating objet as hit
-        self.is_hit = False
-
-    @property
-    def hidden(self):
-        return self.tilegrid.hidden
-
-    @hidden.setter
-    def hidden(self, hide):
-        self.tilegrid.hidden = hide
-
-    def get_bounds(self):
-        '''
-        Return display bounds...
-        '''
-
-        # Calculate upper left and lower right corners
-        xmin = self.tilegrid.x
-        xmax = self.tilegrid.x + self.display_width
-        ymin = self.tilegrid.y
-        ymax = self.tilegrid.y + self.display_height
-
-        return xmin, xmax, ymin, ymax
-
-    def get_pixel_locs(self, bounds):
-        '''
-        Return array of pixel locations where the bitmap represents the image
-        '''
-
-        # Determine background value
-        background_value = self.tilegrid.bitmap[0,0]
-
-        # Initialze output pixel list
-        pixel_locs = []
-
-        # Loop through all tiles in the tilegrid
-        for j in range(self.tilegrid.height):
-            for i in range(self.tilegrid.width):
-
-                # Calculate tile bounds within display
-                tile_xmin = self.tilegrid.x + i * self.tilegrid.tile_width
-                tile_xmax = tile_xmin + self.tilegrid.tile_width
-                tile_ymin = self.tilegrid.y + j * self.tilegrid.tile_height
-                tile_ymax = tile_ymin + self.tilegrid.tile_height
-                tile_bounds = [tile_xmin, tile_xmax, tile_ymin, tile_ymax]
-
-                # Determine tile overlap with input bounds
-                tile_overlap_bounds = find_overlap_bounds(bounds, tile_bounds)
-                if tile_overlap_bounds:
-
-                    # Get coordinates of tile within bitmap
-                    tile_index = self.tilegrid[i,j]
-                    tiles_per_row = self.tilegrid.bitmap.width / self.tilegrid.tile_width
-                    bitmap_xstart = int((tile_index % tiles_per_row) * self.tilegrid.tile_width)
-                    bitmap_ystart = int((tile_index // tiles_per_row) * self.tilegrid.tile_height)
-
-                    # Calulate offsets from bitmap start to overlapping area, accounting
-                    # for the tiles flipped status
-                    if self.tilegrid.flip_x:
-                        bitmap_xoffset = tile_xmax - tile_overlap_bounds[1]
-                    else:
-                        bitmap_xoffset = tile_overlap_bounds[0] - tile_xmin
-                    if self.tilegrid.flip_y:
-                        bitmap_yoffset = tile_ymax - tile_overlap_bounds[3]
-                    else:
-                        bitmap_yoffset = tile_overlap_bounds[2] - tile_ymin
-
-                    # Calculate pixel range within bitmap of overlap
-                    range_width = tile_overlap_bounds[1] - tile_overlap_bounds[0]
-                    range_height = tile_overlap_bounds[3] - tile_overlap_bounds[2]
-                    range_xstart = (bitmap_xstart + bitmap_xoffset)
-                    range_ystart = (bitmap_ystart + bitmap_yoffset)
-                    range_xend = range_xstart + range_width
-                    range_yend = range_ystart + range_height
-
-                    # Loop through bitmap pixel positions
-                    for x in range(range_xstart, range_xend):
-                        for y in range(range_ystart, range_yend):
-
-                            # Determine if pixel is not equal to backgroudn value
-                            if self.tilegrid.bitmap[x, y] != background_value:
-
-                                # Calculate display coordinates of pixel
-                                if self.tilegrid.flip_x:
-                                    display_x = tile_xmin + self.tilegrid.tile_width - 1 - (x - bitmap_xstart)
-                                else:
-                                    display_x = tile_xmin + x - bitmap_xstart
-                                if self.tilegrid.flip_y:
-                                    display_y = tile_ymin + self.tilegrid.tile_height - 1 - (y - bitmap_ystart)
-                                else:
-                                    display_y = tile_ymin + y - bitmap_ystart
-
-                                # Add display coordinates to output
-                                pixel_locs.append((display_x, display_y))
-
-        return pixel_locs
-
-
-class Ship(SpaceTilegrid):
-    '''
-    Ship class...
-    '''
-
-    def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0, heading=0):
-        super().__init__(tilegrid, display, x=x, y=y, v=v, angle=angle)
-
-        # Ship heading angle controling
-        self.heading = heading
-
-        # Maximum ship velocity
-        self.vmax = 110
-
-        # Turing flag; -1 Left, 0 No Turning; 1 Right
-        self.turning = 0
-
-        # Delta angle applied on while turing on each updae
-        self.turning_angle = pi / 36 * 60
-
-        # Thrusting flag
-        self.thrusting = 0
-
-        # Thrust added on each update while thrusting
-        self.thrust_value = 80
-
-        # Dropoff factor applied on each update while not thrusting
-        self.v_dropoff = .5
-
-        # Number of tiles per row in tilegrid bitmap
-        self.num_tiles = self.tilegrid.bitmap.width // self.tilegrid.tile_width
-
-        # Update the ship position
-        self.update()
-
-    def update(self, delta_time=0):
-        '''
-        Update postion... factor in delta time..,
-        '''
-
-        # Update ship heading based on turnign status and apply angle wrapping
-        if self.turning != 0:
-            self.heading += self.turning * self.turning_angle * delta_time
-            self.heading %= 2 * pi
-
-        # Calculate current velocity components
-        vx = sin(self.angle) * self.v
-        vy = -cos(self.angle) * self.v
-
-        # Update velocity components based on thursting status
-        if self.thrusting:
-            thrust_x = sin(self.heading) * self.thrust_value * delta_time
-            thrust_y = -cos(self.heading) * self.thrust_value * delta_time
-            vx = max(min(vx + thrust_x, self.vmax), -self.vmax)
-            vy = max(min(vy + thrust_y, self.vmax), -self.vmax)
-        else:
-            decay_factor = (1 - self.v_dropoff) ** delta_time
-            vx *= (1 - self.v_dropoff) ** delta_time
-            vy *= (1 - self.v_dropoff) ** delta_time
-
-        # Update ship position and apply screen wrapping
-        self.x = ((self.x + vx * delta_time + self.display_width/2) % (self.display.width + self.display_width)) - self.display_width/2
-        self.y = ((self.y + vy * delta_time + self.display_height/2) % (self.display.height + self.display_height)) - self.display_height/2
-
-        # Update tilegrid position centered on the ship position
-        self.tilegrid.x = int(self.x - self.display_width/2)
-        self.tilegrid.y = int(self.y - self.display_height/2)
-
-        # Recalculate velocity and angle
-        self.v = sqrt(vx**2 + vy**2)
-        self.angle = atan2(vx, -vy)
-
-        # Determine tile index based on current heading
-        tile_idx = round(degrees(self.heading) / (360 / self.num_tiles)) % self.num_tiles
-
-        # Determine tile index offset based on thrust state
-        if self.thrusting and ((monotonic() % 1) // 0.05 % 2) == 0:
-            tile_offset =1
-        else:
-            tile_offset = 0
-
-        # Update ship tiletrid
-        self.tilegrid[0] = tile_idx + (tile_offset * self.num_tiles)
-
-    def reset(self, x=0, y=0):
-        '''
-        Rest ship...
-        '''
-
-        # Set position and flag values
-        self.x = x
-        self.y = y
-        self.v = 0
-        self.thrusting = 0
-        self.turning = 0
-        self.angle=radians(0)
-        self.heading=radians(0)
-        self.is_hit = False
-
-        # Update the ship position
-        self.update()
-
-
-class Asteroid(SpaceTilegrid):
-    '''
-    Asteroid class
-    '''
-
-    def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0, size=1):
-        super().__init__(tilegrid, display, x=x, y=y, v=v, angle=angle)
-
-        # Size of asteroid (1-3)
-        self.size = size
-
-        # Update the asteroid position
-        self.update()
-
-    def update(self, delta_time=0):
-        '''
-        Update postion... factor in delta time..,
-        '''
-
-        # Calculate velocity components
-        vx = sin(self.angle) * self.v * delta_time
-        vy = -cos(self.angle) * self.v  * delta_time
-
-        # Update position and apply screen wrapping
-        self.x = ((self.x + vx + self.display_width/2) % (self.display.width + self.display_width)) - self.display_width/2
-        self.y = ((self.y + vy + self.display_height/2) % (self.display.height + self.display_height)) - self.display_height/2
-
-        # Update tilegrid position centered on the ship position
-        self.tilegrid.x = int(self.x - self.display_width/2)
-        self.tilegrid.y = int(self.y - self.display_height/2)
-
-    def detect_hit(self, obj):
-        '''
-        Detect hit..
-        '''
-
-        # Calculate bounds overlap between objects
-        self_bounds = self.get_bounds()
-        obj_bounds = obj.get_bounds()
-        overlap_bounds = find_overlap_bounds(self_bounds, obj_bounds)
-
-        # Return if no overlap exists
-        if overlap_bounds == None:
-            return False
-
-        # Get non-background pixel locations within overlap bounds
-        self_pixel_locs = self.get_pixel_locs(overlap_bounds)
-        obj_pixel_locs = obj.get_pixel_locs(overlap_bounds)
-
-        # Compare pixel locations for valid hit
-        for self_pixel in self_pixel_locs:
-            for obj_pixel in obj_pixel_locs:
-                if self_pixel == obj_pixel:
-                    self.is_hit = True
-                    obj.is_hit = True
-                    return True
-
-        return False
-
-
-class SpaceParticle:
-    '''
-    Base class...
-    '''
-    def __init__(self, x, y, v, angle, display, palette, max_age=0.7, color_index=0):
-        # Display object - dimensions used for position wrapping
-        self.display = display
-
-        # Object movement parameters
-        self.x = x
-        self.y = y
-        self.v = v
-        self.angle = angle
-
-        # Particle color pallet and selection
-        self.palette = palette
-        self.color_index = color_index
-
-        # Particle life parameters (seconds)
-        self.age = 0
-        self.max_age = max_age
-
-        # Particle shape object
-        self.shape = None
-
-    def update(self, delta_time=0):
-        '''
-        Update position...
-        '''
-
-        # Calculate velocity components
-        vx = sin(self.angle) * self.v * delta_time
-        vy = -cos(self.angle) * self.v  * delta_time
-
-        # Update position and apply screen wrapping
-        self.x = (self.x + vx) % self.display.width
-        self.y = (self.y + vy) % self.display.height
-
-        # Update update shape position
-        self.shape.x = int(self.x)
-        self.shape.y = int(self.y)
-
-        # Update age
-        self.age += delta_time
-
-    def check_expired(self):
-        '''
-        Check expired...
-        '''
-        return self.age > self.max_age
-
-
-class CircleParticle(SpaceParticle):
-    def __init__(self, x, y, radius, v, angle, display, palette, max_age=0.9, color_index=0):
-        super().__init__(x, y, v, angle, display, palette, max_age=max_age, color_index=color_index)
-
-        # Circle radius
-        self.radius = radius
-
-        # Circle display object
-        self.shape = Circle(
-            x=int(self.x),
-            y= int(self.y),
-            radius=self.radius,
-            pixel_shader=self.palette,
-            color_index=self.color_index
-        )
-
-
-class RectParticle(SpaceParticle):
-    '''
-    Rect particle class
-    '''
-    def __init__(self, x, y, width, height, v, angle, display, palette, max_age=0.9, color_index=0):
-        super().__init__(x, y, v, angle, display, palette, max_age=max_age, color_index=color_index)
-
-        # Rectantle dimensions
-        self.width = width
-        self.height = height
-
-        # Rectangle display object
-        self.shape = Rectangle(
-            x=int(self.x),
-            y=int(self.y),
-            width=int(self.width),
-            height=int(self.height),
-            pixel_shader=self.palette,
-            color_index=self.color_index
-        )
-
-class LineParticle(SpaceParticle):
-    '''
-    Line particle class
-    '''
-
-    def __init__(self, x0, y0, x1, y1, v, angle, display, palette, color_index=0, max_age=0.9):
-        super().__init__(x0, y0, v, angle, display, palette, max_age=max_age, color_index=color_index)
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.width = abs(self.x0 - self.x1)
-        self.height = abs(self.y0 - self.y1)
-        self.shape = Line(int(self.x0), int(self.y0), int(self.x1), int(self.y1), color=self.palette[self.color_index])
-        self.x = self.shape.x
-        self.y = self.shape.y
-
-    def update(self, delta_time=0):
-        '''
-        Update
-        '''
-
-        # Update the line position
-        vx = sin(self.angle) * self.v * delta_time
-        vy = -cos(self.angle) * self.v  * delta_time
-        self.x = ((self.x + vx + self.width/2) % (self.display.width + self.width)) - self.width/2
-        self.y = ((self.y + vy + self.height/2) % (self.display.height + self.height)) - self.height/2
-        self.shape.x = int(self.x)
-        self.shape.y = int(self.y)
-
-        # Update age
-        self.age += delta_time
-
-
-class Bullet(CircleParticle):
-    def __init__(self, x, y, radius, v, angle, display, palette, max_age=0.6, color_index=0):
-        super().__init__(x, y, radius, v, angle, display, palette, max_age=max_age, color_index=color_index)
-
-        # Collision status flag
-        self.is_hit = False
-
-    def get_bounds(self):
-        '''
-        Get bounds...
-        '''
-
-        # Calculate upper left and lower right corners
-        xmin = int(self.shape.x - self.radius)
-        xmax = int(self.shape.x + self.radius)
-        ymin = int(self.shape.y - self.radius)
-        ymax = int(self.shape.y + self.radius)
-
-        return xmin, xmax, ymin, ymax
-
-    def get_pixel_locs(self, overlap_bounds):
-        '''
-        Get pixel locs
-        '''
-        return [(int(self.shape.x), int(self.shape.y))]
-
-def find_overlap_bounds(bounds_1, bounds_2):
-    ''' Return bounds (xmin, xmax, ymin, ymax) of overlapping
-        area between two input bounds. Return None if no
-        overlap exists
-    '''
-
-    # Calculate the overlapping region
-    overlap_xmin = max(bounds_1[0], bounds_2[0])
-    overlap_xmax = min(bounds_1[1], bounds_2[1])
-    overlap_ymin = max(bounds_1[2], bounds_2[2])
-    overlap_ymax = min(bounds_1[3], bounds_2[3])
-
-    # Check if there is an actual overlap
-    if overlap_xmin < overlap_xmax and overlap_ymin < overlap_ymax:
-        return overlap_xmin, overlap_xmax, overlap_ymin, overlap_ymax
-    else:
-        # No overlap
-        return None
-
+                self.create_face_wave(min(self.level, 3))

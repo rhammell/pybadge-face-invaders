@@ -1,7 +1,7 @@
 import board
 from neopixel import NeoPixel
 from keypad import ShiftRegisterKeys
-from asteroids import AsteroidsGame
+from face_invaders.face_invaders import FaceInvadersGame
 
 # Show display
 display = board.DISPLAY
@@ -15,7 +15,7 @@ led = NeoPixel(board.NEOPIXEL, 1, auto_write=True)
 led.brightness = 0.0
 
 # Create instance of Asteroids game
-asteroids_game = AsteroidsGame(board)
+face_invaders_game = FaceInvadersGame(board)
 
 # Pybadge key input object
 keys = ShiftRegisterKeys(
@@ -38,36 +38,36 @@ while True:
 
         # B button event
         if key.key_number == 0:
-            asteroids_game.b_button_event(pressed=key.pressed)
+            face_invaders_game.b_button_event(pressed=key.pressed)
 
         # A button event
         elif key.key_number == 1:
-            asteroids_game.a_button_event(pressed=key.pressed)
+            face_invaders_game.a_button_event(pressed=key.pressed)
 
         # Starte button event
         elif key.key_number == 2:
-            asteroids_game.start_button_event(pressed=key.pressed)
+            face_invaders_game.start_button_event(pressed=key.pressed)
 
         # Select button event
         elif key.key_number == 3:
-            asteroids_game.select_button_event(pressed=key.pressed)
+            face_invaders_game.select_button_event(pressed=key.pressed)
 
         # Right button event
         elif key.key_number == 4:
-            asteroids_game.right_button_event(pressed=key.pressed)
+            face_invaders_game.right_button_event(pressed=key.pressed)
 
         # Down button event
         elif key.key_number == 5:
-            asteroids_game.down_button_event(pressed=key.pressed)
+            face_invaders_game.down_button_event(pressed=key.pressed)
 
         # Up button event
         elif key.key_number == 6:
-            asteroids_game.up_button_event(pressed=key.pressed)
+            face_invaders_game.up_button_event(pressed=key.pressed)
 
         # Left button event
         elif key.key_number == 7:
-            asteroids_game.left_button_event(pressed=key.pressed)
+            face_invaders_game.left_button_event(pressed=key.pressed)
 
     # Tick game forward and refresh display
-    asteroids_game.tick()
+    face_invaders_game.tick()
     display.refresh()
