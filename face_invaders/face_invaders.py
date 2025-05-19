@@ -12,13 +12,13 @@ from digitalio import DigitalInOut
 from audiocore import WaveFile
 from audioio import AudioOut
 from audiomixer import Mixer
-from adafruit_display_text import label, bitmap_label
-from adafruit_display_shapes.triangle import Triangle
-from vectorio import Rectangle
+from adafruit_display_text import bitmap_label
+from vectorio import Rectangle, Polygon
 
 from face_invaders.space_objects import Ship, Face
 from face_invaders.space_particles import RectParticle, LineParticle, Bullet
 from face_invaders import constants as C
+
 
 class FaceInvadersGame():
     '''
@@ -239,7 +239,7 @@ class FaceInvadersGame():
             self.logo_bitmap,
             pixel_shader=self.logo_pallete,
             x=self.display_center_x-self.logo_bitmap.width//2,
-            y=self.display_center_y-self.logo_bitmap.height//2-10
+            y=self.display_center_y-self.logo_bitmap.height//2-2
         ))
 
     def _create_game_ui(self):
@@ -251,7 +251,7 @@ class FaceInvadersGame():
         self.ui_group.hidden = True
 
         # Create game UI elements and hide display group
-        self.score_text = label.Label(
+        self.score_text = bitmap_label.Label(
             FONT,
             text='0',
             color=self.palette[0],
@@ -317,7 +317,7 @@ class FaceInvadersGame():
             anchor_point=(0.5, 0.0),
             anchored_position=(self.display_center_x, 5)
         ))
-        self.score_input_group.append( bitmap_label.Label(
+        self.score_input_group.append(bitmap_label.Label(
             FONT,
             text='Enter player intials:',
             color=self.palette[0],
@@ -337,7 +337,7 @@ class FaceInvadersGame():
         self.initial_inputs = []
         self.initial_spacing = 22
         for i in range(self.num_initials):
-            initial_input = label.Label(
+            initial_input = bitmap_label.Label(
                 FONT,
                 text='_',
                 color=self.palette[0],
@@ -348,11 +348,25 @@ class FaceInvadersGame():
             self.score_input_group.append(initial_input)
             self.initial_inputs.append(initial_input)
 
-        # Create initials cursor
+        # Create initials cursor group
         self.initials_cursor_group = Group(y=52)
         self.score_input_group.append(self.initials_cursor_group)
-        self.initials_cursor_group.append(Triangle(0, 5, 4, 0, 8, 5, outline=self.palette[0]))
-        self.initials_cursor_group.append(Triangle(0, 33, 4, 38, 8, 33, outline=self.palette[0]))
+        
+        # Cursor upper triangle
+        self.initials_cursor_group.append(Polygon(
+            points=[(0, 5), (4, 0), (8, 5)],
+            pixel_shader=self.palette,
+            color_index=0
+        ))
+        
+        # Cursor lower triangle
+        self.initials_cursor_group.append(Polygon(
+            points=[(0, 33), (4, 38), (8, 33)],
+            pixel_shader=self.palette,
+            color_index=0
+        ))
+        
+        # Init cursor position and update
         self.current_initial = 0
         self.update_initials_cursor()
 
@@ -385,7 +399,7 @@ class FaceInvadersGame():
         self.high_scores_numbers = []
         for i in range(C.NUM_HIGH_SCORES):
             # Score rank
-            self.high_scores_group.append(label.Label(
+            self.high_scores_group.append(bitmap_label.Label(
                 FONT,
                 text=str(i+1),
                 color=self.palette[0],
@@ -394,7 +408,7 @@ class FaceInvadersGame():
             ))
 
             # Score player initials
-            score_name = label.Label(
+            score_name = bitmap_label.Label(
                 FONT,
                 text="-",
                 color=self.palette[0],
@@ -405,7 +419,7 @@ class FaceInvadersGame():
             self.high_scores_names.append(score_name)
 
             # Score number
-            score_number = label.Label(
+            score_number = bitmap_label.Label(
                 FONT,
                 text="-",
                 color=self.palette[0],
@@ -461,7 +475,7 @@ class FaceInvadersGame():
                 anchor_point=(0.0, 0.0),
                 anchored_position=(self.display_center_x-60, self.options_y_start+i*self.options_spacing)
             ))
-            self.option_values.append(label.Label(
+            self.option_values.append(bitmap_label.Label(
                 FONT,
                 text=str(option[1]),
                 color=self.palette[0],
@@ -470,11 +484,25 @@ class FaceInvadersGame():
             ))
             self.options_menu_group.append(self.option_values[i])
 
-        # Create options cursor
+        # Create options cursor group
         self.options_cursor_group = Group(x=self.display_center_x+17)
         self.options_menu_group.append(self.options_cursor_group)
-        self.options_cursor_group.append(Triangle(0, 3, 5, 0, 5, 6, outline=self.palette[0]))
-        self.options_cursor_group.append(Triangle(30, 0, 35, 3, 30, 6, outline=self.palette[0]))
+        
+        # Cursor left arrow
+        self.options_cursor_group.append(Polygon(
+            points=[(0, 3), (5, 0), (5, 6)],
+            pixel_shader=self.palette,
+            color_index=0
+        ))
+        
+        # Cursor right arrow
+        self.options_cursor_group.append(Polygon(
+            points=[(30, 0), (35, 3), (30, 6)],
+            pixel_shader=self.palette,
+            color_index=0
+        ))
+
+        # Init cursor position and update
         self.current_option = 0
         self.update_options_cursor()
 
@@ -503,7 +531,7 @@ class FaceInvadersGame():
             pixel_shader=self.palette,
             color_index=1
         ))
-        self.controls_menu_group.append(label.Label(
+        self.controls_menu_group.append(bitmap_label.Label(
             FONT,
             text='Controls',
             color=self.palette[0],
@@ -521,7 +549,7 @@ class FaceInvadersGame():
                 anchor_point=(0.0, 0.0),
                 anchored_position=(self.display_center_x-55, 40+i*15)
             ))
-            self.controls_menu_group.append(label.Label(
+            self.controls_menu_group.append(bitmap_label.Label(
                 FONT,
                 text=str(control[1]),
                 color=self.palette[0],
@@ -754,7 +782,7 @@ class FaceInvadersGame():
         self.clear_game_elements()
 
         # Create background faces
-        self.create_face_wave(4)
+        self.create_face_wave(3)
 
         # Show/hide required display groups
         self.ui_group.hidden = True
@@ -1283,7 +1311,9 @@ class FaceInvadersGame():
         current_tick_time = monotonic()
         delta_time = current_tick_time - self.last_tick_time if self.last_tick_time else 0.02
         self.last_tick_time = current_tick_time
-        #gc_collect()
+
+        # Garbage collect memory
+        gc_collect()
         #print( mem_free() )
 
         # If options/controls menu is not open, process game objects
