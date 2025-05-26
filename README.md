@@ -7,6 +7,8 @@ This repository contains the code, image sprites, and audio assets to run the ga
 
 The game recreates the arcade classic Asteroids, giving players control over a physics-based ship to thrust, turn, and shoot. The goal is to earn a high score by eliminating waves of incoming objects that destroy the ship on contact.
 
+![Face Invaders Gameplay](https://hackster.imgix.net/uploads/attachments/1852272/pxl_20250523_105941870-ezgif_com-video-to-gif-converter_(12)_9GY6kBPAOb.gif?auto=compress&gifq=35&w=740&h=555&fit=max&fm=mp4)
+
 For a fun experience, the typical asteroid game sprites are replaced with custom-created face sprites. This adds a playful twist to the gameplay, as players are now maneuvering around the floating faces of friends, family, or even themselves.
 
 Additional Face Invaders features include:
