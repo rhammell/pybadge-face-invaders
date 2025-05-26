@@ -4,7 +4,9 @@ Face Invaders is an arcade game built for the Adafruit PyBadge, which features p
 This repository contains the code, image sprites, and audio assets to run the game. Read the [project guide](https://www.hackster.io/rhammell/pybadge-face-invaders-c26c30) on Hackster.io for a more game details and installation instructions. 
 
 # Project Description
-![Face Invaders](https://i.imgur.com/38A9Scj.jpeg)
+<p align="center">
+  <img src="https://i.imgur.com/38A9Scj.jpeg" width="600" alt="Face Invaders">
+</p>
 
 Face Invaders recreates the arcade classic Asteroids, giving players control over a physics-based ship to thrust, turn, and shoot. The goal is to earn a high score by eliminating waves of incoming objects that destroy the ship on contact.
 
