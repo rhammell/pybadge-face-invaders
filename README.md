@@ -13,6 +13,9 @@ The game recreates the arcade classic Asteroids, giving players control over a p
 
 <img src="https://i.imgur.com/ETon29N.gif" alt="Demo GIF" width="600">
 
+![Demo GIF](https://i.imgur.com/38A9Scj.jpeg)
+
+
 For a fun experience, the typical asteroid game sprites are replaced with custom-created face sprites. This adds a playful twist to the gameplay, as players are now maneuvering around the floating faces of friends, family, or even themselves.
 
 Additional Face Invaders features include:
