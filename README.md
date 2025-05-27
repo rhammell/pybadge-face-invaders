@@ -1,7 +1,7 @@
 # pybadge-face-invaders
-Face Invaders is an arcade game built for the Adafruit PyBadge, which features personalized 'face' objects that the player can dodge and destroy.
+Face Invaders is an arcade game built for the Adafruit PyBadge, which features personalized 'face' objects that the player can dodge and destroy.This repository contains the code, image sprites, and audio assets to run the game. 
 
-This repository contains the code, image sprites, and audio assets to run the game. Read the [project guide](https://www.hackster.io/rhammell/pybadge-face-invaders-c26c30) on Hackster.io for a more game details and installation instructions. 
+Read the [project guide](https://www.hackster.io/rhammell/pybadge-face-invaders-c26c30) on Hackster.io for a more game details and installation instructions. 
 
 # Project Description
 <p align="center">
