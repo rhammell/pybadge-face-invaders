@@ -35,12 +35,17 @@ class AudioManager:
         for i in range(self.voice_count):
             self.mixer.voice[i].level = volume / 100.0
 
-    def control_sound(self, action, sound_name, loop=False):
-        """Play or stop a sound by name."""
+    def play_sound(self, sound_name, loop=False):
+        """Play a sound by name."""
         voice_index, sound_wav = self.sounds[sound_name]
-        if action == 'play':
-            self.mixer.voice[voice_index].play(sound_wav, loop=loop)
-        elif action == 'stop':
-            self.mixer.voice[voice_index].stop()
-        elif action == 'end':
-            self.mixer.voice[voice_index].end()
+        self.mixer.voice[voice_index].play(sound_wav, loop=loop)
+
+    def stop_sound(self, sound_name):
+        """Stop playback of a sound by name."""
+        voice_index, _ = self.sounds[sound_name]
+        self.mixer.voice[voice_index].stop()
+
+    def end_sound(self, sound_name):
+        """End playback of a looping sound by name."""
+        voice_index, _ = self.sounds[sound_name]
+        self.mixer.voice[voice_index].end()
