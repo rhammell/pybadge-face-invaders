@@ -1,6 +1,4 @@
 from time import monotonic
-from json import load as json_load
-from json import dump as json_dump
 from random import randrange, choice
 from gc import collect as gc_collect
 from gc import mem_free
@@ -17,6 +15,7 @@ from face_invaders.audio import AudioManager
 from face_invaders.space_objects import Ship, Face
 from face_invaders.space_particles import RectParticle, LineParticle, Bullet
 from face_invaders import constants as C
+from face_invaders import high_scores
 
 
 class FaceInvadersGame():
@@ -55,7 +54,7 @@ class FaceInvadersGame():
         gc_collect()
         
         # Load high scores
-        self.high_scores = self.load_high_scores()
+        self.high_scores = high_scores.load_high_scores()
 
         # Show start menu
         self.start_menu()
@@ -889,58 +888,6 @@ class FaceInvadersGame():
         self.high_scores_group.hidden = True
         self.game_over_group.hidden = False
 
-    def update_high_scores(self, ):
-        '''
-        Add high scores to list and save...
-        '''
-
-        # Get player initials from menu inputs
-        initials = ''.join([input.text for input in self.initial_inputs])
-
-        # Update high scores and sort list
-        self.high_scores.append((initials, self.score))
-        self.high_scores.sort(key=lambda x: x[1], reverse=True)
-
-        # Reduce list to top five scores
-        if len(self.high_scores) > 5:
-            self.high_scores.pop()
-
-        # Save high scores to storage
-        self.save_high_scores()
-
-    def load_high_scores(self):
-        ''' Return high scores from saved file or initialize empty list '''
-
-        # Load high scores json file
-        try:
-            with open(C.HIGH_SCORES_FNAME, 'r') as file:
-                high_scores = json_load(file)
-
-        # If load fails (does not exist), create empty list
-        except:
-            high_scores = []
-
-        return high_scores
-
-    def save_high_scores(self):
-        ''' Save high score list to local storage '''
-
-        # Write high score list to output json file
-        with open(C.HIGH_SCORES_FNAME, 'w') as f:
-            json_dump(self.high_scores, f)
-
-    def check_high_score(self):
-        '''
-        Check if input score is higher than
-        any other current high score and return True
-        '''
-        if len(self.high_scores) < C.NUM_HIGH_SCORES:
-            return True
-        else:
-            for _, high_score in self.high_scores:
-                if self.score > high_score:
-                    return True
-        return False
 
     def update_initials_cursor(self):
         '''
@@ -1020,7 +967,8 @@ class FaceInvadersGame():
 
             # If at last position, update scores and proceed to high scores menu
             else:
-                self.update_high_scores()
+                initials = ''.join([input.text for input in self.initial_inputs])
+                high_scores.update_high_scores(self.high_scores, initials, self.score)
                 self.high_scores_menu()
 
 
@@ -1098,7 +1046,7 @@ class FaceInvadersGame():
 
                 # If new high score was acheived, show score input menu
                 # otherwise show high scores menu
-                if self.check_high_score():
+                if high_scores.check_high_score(self.high_scores, self.score):
                     self.score_input_menu()
                 else:
                     self.high_scores_menu()
