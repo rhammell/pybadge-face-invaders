@@ -1,13 +1,18 @@
 """Constants used throughout the Face Invaders game."""
 
-# Game state constants
-STATE_START_MENU = 0
-STATE_ACTIVE_GAME = 1
-STATE_OPTIONS_MENU = 2
-STATE_CONTROLS_MENU = 3
-STATE_GAME_OVER = 4
-STATE_SCORE_INPUT = 5
-STATE_HIGH_SCORES = 6
+from enum import IntEnum
+
+
+class GameState(IntEnum):
+    """Enumerates the possible game states."""
+    START_MENU = 0
+    ACTIVE_GAME = 1
+    OPTIONS_MENU = 2
+    CONTROLS_MENU = 3
+    GAME_OVER = 4
+    SCORE_INPUT = 5
+    HIGH_SCORES = 6
+
 
 # Game settings
 HIGH_SCORES_FNAME = 'face_invaders/scores.json'

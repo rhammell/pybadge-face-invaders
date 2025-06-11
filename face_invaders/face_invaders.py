@@ -752,7 +752,7 @@ class FaceInvadersGame():
         '''
 
         # Update current game state
-        self.current_state = C.STATE_START_MENU
+        self.current_state = C.GameState.START_MENU
 
         # Clear face/particles/bullets
         self.clear_game_elements()
@@ -773,9 +773,9 @@ class FaceInvadersGame():
         '''
 
         # Update current game state and show/hide options menu
-        if self.current_state != C.STATE_OPTIONS_MENU:
+        if self.current_state != C.GameState.OPTIONS_MENU:
             self.prev_state = self.current_state
-            self.current_state = C.STATE_OPTIONS_MENU
+            self.current_state = C.GameState.OPTIONS_MENU
             self.options_menu_group.hidden = False
         else:
             self.current_state = self.prev_state
@@ -787,9 +787,9 @@ class FaceInvadersGame():
         '''
 
         # Update current game state and show/hide controls menu
-        if self.current_state != C.STATE_CONTROLS_MENU:
+        if self.current_state != C.GameState.CONTROLS_MENU:
             self.prev_state = self.current_state
-            self.current_state = C.STATE_CONTROLS_MENU
+            self.current_state = C.GameState.CONTROLS_MENU
             self.controls_menu_group.hidden = False
         else:
             self.current_state = self.prev_state
@@ -801,7 +801,7 @@ class FaceInvadersGame():
         '''
 
         # Update current game state
-        self.current_state = C.STATE_ACTIVE_GAME
+        self.current_state = C.GameState.ACTIVE_GAME
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -842,7 +842,7 @@ class FaceInvadersGame():
         '''
 
         # Update current game state
-        self.current_state = C.STATE_SCORE_INPUT
+        self.current_state = C.GameState.SCORE_INPUT
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -857,7 +857,7 @@ class FaceInvadersGame():
         '''
 
         # Update current game state
-        self.current_state = C.STATE_HIGH_SCORES
+        self.current_state = C.GameState.HIGH_SCORES
 
         # Update display elements with scores
         for i, high_score in enumerate(self.high_scores):
@@ -877,7 +877,7 @@ class FaceInvadersGame():
         '''
 
         # Update current game state
-        self.current_state = C.STATE_GAME_OVER
+        self.current_state = C.GameState.GAME_OVER
 
         # Show/hide required display groups
         self.start_menu_group.hidden = True
@@ -1020,14 +1020,14 @@ class FaceInvadersGame():
         '''
 
         # Game in start menu state and button pressed
-        if self.current_state == C.STATE_START_MENU and pressed:
+        if self.current_state == C.GameState.START_MENU and pressed:
 
             # Begin new game and play continue sound
             self.new_game()
             self.audio_manager.play_sound('new_ship')
 
         # Game in active play state and button pressed
-        elif self.current_state == C.STATE_ACTIVE_GAME and pressed and self.ship.hidden == False:
+        elif self.current_state == C.GameState.ACTIVE_GAME and pressed and self.ship.hidden == False:
 
             # Create bullet object
             now = monotonic()
@@ -1037,7 +1037,7 @@ class FaceInvadersGame():
                 self.audio_manager.play_sound('bullet')
 
         # Game in game over state and button pressed
-        elif self.current_state == C.STATE_GAME_OVER and pressed:
+        elif self.current_state == C.GameState.GAME_OVER and pressed:
 
             # Check if text instructions are displayed after delay
             if self.game_over_text_group.hidden == False:
@@ -1051,7 +1051,7 @@ class FaceInvadersGame():
                 self.audio_manager.play_sound('continue')
 
         # Game in score input state and button pressed
-        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.GameState.SCORE_INPUT and pressed:
 
             # Confirm selected character and proceed to next initial or
             # high scores menu
@@ -1059,7 +1059,7 @@ class FaceInvadersGame():
             self.audio_manager.play_sound('continue')
 
         # Game in high score state and button pressed
-        elif self.current_state == C.STATE_HIGH_SCORES and pressed:
+        elif self.current_state == C.GameState.HIGH_SCORES and pressed:
 
             # Start new game and play continue sound
             self.start_menu()
@@ -1072,7 +1072,7 @@ class FaceInvadersGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.GameState.ACTIVE_GAME and self.ship.hidden == False:
 
             # Enable ship thrusting and sound when button pressed
             if pressed:
@@ -1085,7 +1085,7 @@ class FaceInvadersGame():
                 self.audio_manager.end_sound('ship_thrust')
 
         # Game in score input state and button pressed
-        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.GameState.SCORE_INPUT and pressed:
 
             # Select the previous initial and update cursor
             if self.current_initial > 0:
@@ -1099,7 +1099,7 @@ class FaceInvadersGame():
         '''
 
         # Controls menu is not open and select button pressed
-        if self.current_state != C.STATE_CONTROLS_MENU and pressed:
+        if self.current_state != C.GameState.CONTROLS_MENU and pressed:
 
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
@@ -1119,7 +1119,7 @@ class FaceInvadersGame():
         '''
 
         # Options menu is not open and select button pressed
-        if self.current_state != C.STATE_OPTIONS_MENU and pressed:
+        if self.current_state != C.GameState.OPTIONS_MENU and pressed:
 
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
@@ -1139,13 +1139,13 @@ class FaceInvadersGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.GameState.ACTIVE_GAME and self.ship.hidden == False:
 
             # Set ship turning flag left based on key press or release
             self.ship.turning = -1  if pressed else 0
 
         # Game in options menu state and button pressed
-        elif self.current_state == C.STATE_OPTIONS_MENU and pressed:
+        elif self.current_state == C.GameState.OPTIONS_MENU and pressed:
 
             # Update selected option value and play click sound
             self.update_option(decrease=True)
@@ -1158,13 +1158,13 @@ class FaceInvadersGame():
         '''
 
         # Game is in active state and ship is visible
-        if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
+        if self.current_state == C.GameState.ACTIVE_GAME and self.ship.hidden == False:
 
             # Set ship turning flag right based on key press or release
             self.ship.turning = 1 if pressed else 0
 
         # Game in options menu state and button pressed
-        elif self.current_state == C.STATE_OPTIONS_MENU and pressed:
+        elif self.current_state == C.GameState.OPTIONS_MENU and pressed:
 
             # Update selected option value and play click sound
             self.update_option()
@@ -1177,14 +1177,14 @@ class FaceInvadersGame():
         '''
 
         # Game in options menu state and button pressed
-        if self.current_state == C.STATE_OPTIONS_MENU and pressed:
+        if self.current_state == C.GameState.OPTIONS_MENU and pressed:
 
             # Update selected option and cursor position
             self.current_option = (self.current_option + 1) % len(self.option_values)
             self.update_options_cursor()
 
         # Game in score input state and button pressed
-        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.GameState.SCORE_INPUT and pressed:
 
             # Update initial input with next character
             self.update_char()
@@ -1197,14 +1197,14 @@ class FaceInvadersGame():
         '''
 
         # Game in options menu state and button pressed
-        if self.current_state == C.STATE_OPTIONS_MENU and pressed:
+        if self.current_state == C.GameState.OPTIONS_MENU and pressed:
 
             # Update selected option and cursor position
             self.current_option = (self.current_option - 1) % len(self.option_values)
             self.update_options_cursor()
 
         # Game in score input state and button pressed
-        elif self.current_state == C.STATE_SCORE_INPUT and pressed:
+        elif self.current_state == C.GameState.SCORE_INPUT and pressed:
 
             # Update initial input with previous character
             self.update_char(backwards=True)
@@ -1226,7 +1226,7 @@ class FaceInvadersGame():
         #print( mem_free() )
 
         # If options/controls menu is not open, process game objects
-        if self.current_state not in [C.STATE_OPTIONS_MENU, C.STATE_CONTROLS_MENU]:
+        if self.current_state not in [C.GameState.OPTIONS_MENU, C.GameState.CONTROLS_MENU]:
 
             # Update ship position and rotation
             self.ship.update(delta_time)
@@ -1244,7 +1244,7 @@ class FaceInvadersGame():
                 paritcle.update(delta_time)
 
             # Process active gameplay state
-            if self.current_state == C.STATE_ACTIVE_GAME:
+            if self.current_state == C.GameState.ACTIVE_GAME:
 
                 # Check for collisions between faces and ship/bullets
                 for face in self.faces:
@@ -1331,7 +1331,7 @@ class FaceInvadersGame():
                         self.audio_manager.play_sound('game_over')
 
             # Process game over game step
-            elif self.current_state == C.STATE_GAME_OVER:
+            elif self.current_state == C.GameState.GAME_OVER:
 
                 # Show game over text instructions after delay has passed
                 if self.game_over_text_group.hidden and monotonic() - self.game_over_time > self.game_over_seconds:
