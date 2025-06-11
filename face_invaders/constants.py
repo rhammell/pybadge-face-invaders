@@ -17,7 +17,7 @@ MAX_LIVES = 3
 # Points awarded for destroying faces
 FACE_POINTS = {
     1: 20,  # Large face
-    2: 50,  # Medium face 
+    2: 50,  # Medium face
     3: 100  # Small face
 }
 
