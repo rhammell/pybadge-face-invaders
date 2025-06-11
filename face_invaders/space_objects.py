@@ -12,6 +12,8 @@ class SpaceTilegrid:
     '''
 
     def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0):
+        """Initialize the tilegrid-backed game object."""
+
         # Tilegrid
         self.tilegrid = tilegrid
 
@@ -33,10 +35,12 @@ class SpaceTilegrid:
 
     @property
     def hidden(self):
+        """Whether the object's tilegrid is hidden."""
         return self.tilegrid.hidden
 
     @hidden.setter
     def hidden(self, hide):
+        """Show or hide the object's tilegrid."""
         self.tilegrid.hidden = hide
 
     def get_bounds(self):
@@ -130,6 +134,8 @@ class Ship(SpaceTilegrid):
     '''
 
     def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0, heading=0):
+        """Create the player's ship."""
+
         super().__init__(tilegrid, display, x=x, y=y, v=v, angle=angle)
 
         # Ship heading angle controlling
@@ -230,6 +236,8 @@ class Face(SpaceTilegrid):
     '''
 
     def __init__(self, tilegrid, display, x=0, y=0, v=0, angle=0, size=1):
+        """Create an enemy face object."""
+
         super().__init__(tilegrid, display, x=x, y=y, v=v, angle=angle)
 
         # Size of face (1-3)
