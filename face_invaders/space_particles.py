@@ -9,6 +9,8 @@ class SpaceParticle:
     Base class for all particle effects in the game
     '''
     def __init__(self, x, y, v, angle, display, palette, max_age=0.7, color_index=0):
+        """Initialize a particle effect."""
+
         # Display object - dimensions used for position wrapping
         self.display = display
 
@@ -60,6 +62,8 @@ class CircleParticle(SpaceParticle):
     Circular particle effect
     '''
     def __init__(self, x, y, radius, v, angle, display, palette, max_age=0.9, color_index=0):
+        """Create a circular particle effect."""
+
         super().__init__(x, y, v, angle, display, palette, max_age=max_age, color_index=color_index)
 
         # Circle radius
@@ -80,6 +84,8 @@ class RectParticle(SpaceParticle):
     Rectangular particle effect
     '''
     def __init__(self, x, y, width, height, v, angle, display, palette, max_age=0.9, color_index=0):
+        """Create a rectangular particle effect."""
+
         super().__init__(x, y, v, angle, display, palette, max_age=max_age, color_index=color_index)
 
         # Rectangle dimensions
@@ -102,6 +108,8 @@ class LineParticle(SpaceParticle):
     Line segment particle effect
     '''
     def __init__(self, x0, y0, x1, y1, v, angle, display, palette, color_index=0, max_age=0.9):
+        """Create a line segment particle effect."""
+
         super().__init__(x0, y0, v, angle, display, palette, max_age=max_age, color_index=color_index)
         self.x0 = x0
         self.y0 = y0
@@ -134,6 +142,8 @@ class Bullet(CircleParticle):
     Player bullet projectile
     '''
     def __init__(self, x, y, radius, v, angle, display, palette, max_age=0.6, color_index=0):
+        """Create a player bullet."""
+
         super().__init__(x, y, radius, v, angle, display, palette, max_age=max_age, color_index=color_index)
 
         # Collision status flag

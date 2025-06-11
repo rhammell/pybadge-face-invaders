@@ -22,6 +22,7 @@ class FaceInvadersGame():
     """Run the Face Invaders game, managing assets, state, and user input."""
 
     def __init__(self, board):
+        """Create a new ``FaceInvadersGame`` instance."""
 
         # Store board reference
         self.board = board

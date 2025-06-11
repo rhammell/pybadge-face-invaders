@@ -8,6 +8,8 @@ class AudioManager:
     """Manage audio output using a mixer."""
 
     def __init__(self, board, voice_count=3):
+        """Initialize the audio system for the game."""
+
         # Enable the PyBadge speaker
         speaker_enable = DigitalInOut(board.SPEAKER_ENABLE)
         speaker_enable.switch_to_output(value=True)
