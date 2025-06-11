@@ -7,7 +7,7 @@ from face_invaders.face_invaders import FaceInvadersGame
 display = board.DISPLAY
 display.root_group.hidden = False
 
-# Turn of display auto refresh
+# Turn off display auto refresh
 display.auto_refresh = False
 
 # Turn off PyBadge LC led
@@ -44,7 +44,7 @@ while True:
         elif key.key_number == 1:
             face_invaders_game.a_button_event(pressed=key.pressed)
 
-        # Starte button event
+        # Start button event
         elif key.key_number == 2:
             face_invaders_game.start_button_event(pressed=key.pressed)
 
