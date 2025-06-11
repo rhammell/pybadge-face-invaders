@@ -8,12 +8,11 @@ from math import sin, cos, radians
 from adafruit_imageload import load as imageload
 from terminalio import FONT
 from displayio import Group, TileGrid, OnDiskBitmap, Palette
-from digitalio import DigitalInOut
 from audiocore import WaveFile
-from audioio import AudioOut
-from audiomixer import Mixer
 from adafruit_display_text import bitmap_label
 from vectorio import Rectangle, Polygon
+
+from face_invaders.audio import AudioManager
 
 from face_invaders.space_objects import Ship, Face
 from face_invaders.space_particles import RectParticle, LineParticle, Bullet
@@ -36,7 +35,7 @@ class FaceInvadersGame():
         self.display_center_y = self.display.height // 2
 
         # Initialize audio system
-        self._init_audio()
+        self.audio_manager = AudioManager(self.board)
         gc_collect()
 
         # Initialize game state variables
@@ -61,27 +60,6 @@ class FaceInvadersGame():
         # Show start menu
         self.start_menu()
 
-    def _init_audio(self):
-        """Initialize audio hardware and mixer"""
-
-        # Enable the PyBadge speaker
-        speaker_enable = DigitalInOut(self.board.SPEAKER_ENABLE)
-        speaker_enable.switch_to_output(value=True)
-
-        # Create audio output object
-        self.audio = AudioOut(self.board.SPEAKER, quiescent_value=0)
-
-        # Create audio mixer object
-        self.voice_count = 3
-        self.mixer = Mixer(
-            voice_count=self.voice_count,
-            sample_rate=22050,
-            channel_count=1,
-            bits_per_sample=16,
-            samples_signed=True,
-            buffer_size=6144
-        )
-        self.audio.play(self.mixer)
 
     def _init_game_state(self):
         """Initialize game state variables"""
@@ -143,6 +121,7 @@ class FaceInvadersGame():
             'explosion_medium': (1, WaveFile(open('face_invaders/snds/face_explosion_medium.wav','rb'))),
             'explosion_large': (1, WaveFile(open('face_invaders/snds/face_explosion_large.wav','rb')))
         }
+        self.audio_manager.load_sounds(self.sounds)
 
         # Load background image
         self.background_bitmap = OnDiskBitmap('face_invaders/img/background.bmp')
@@ -1044,21 +1023,6 @@ class FaceInvadersGame():
                 self.update_high_scores()
                 self.high_scores_menu()
 
-    def control_sound(self, action, sound_name, loop=False):
-        '''
-        Play/stop sound out of correct mixer
-        '''
-
-        # Get voice index and wav for input sound name
-        voice_index, sound_wav = self.sounds[sound_name]
-
-        # Play or stop
-        if action == 'play':
-            self.mixer.voice[voice_index].play(sound_wav, loop=loop)
-        elif action == 'stop':
-            self.mixer.voice[voice_index].stop()
-        elif action == 'end':
-            self.mixer.voice[voice_index].end()
 
     def create_bullet(self):
         '''
@@ -1100,8 +1064,7 @@ class FaceInvadersGame():
         '''
         Set volume
         '''
-        for i in range(self.voice_count):
-            self.mixer.voice[i].level = self.volume / 100.
+        self.audio_manager.set_volume(self.volume)
 
 
     def a_button_event(self, pressed=True):
@@ -1115,7 +1078,7 @@ class FaceInvadersGame():
 
             # Begin new game and play continue sound
             self.new_game()
-            self.control_sound('play', 'new_ship')
+            self.audio_manager.control_sound('play', 'new_ship')
 
         # Game in active play state and button pressed
         elif self.current_state == C.STATE_ACTIVE_GAME and pressed and self.ship.hidden == False:
@@ -1125,7 +1088,7 @@ class FaceInvadersGame():
             if self.create_bullet_time == None or now - self.create_bullet_time > self.create_bullet_seconds:
                 self.create_bullet_time = now
                 self.create_bullet()
-                self.control_sound('play', 'bullet')
+                self.audio_manager.control_sound('play', 'bullet')
 
         # Game in game over state and button pressed
         elif self.current_state == C.STATE_GAME_OVER and pressed:
@@ -1139,7 +1102,7 @@ class FaceInvadersGame():
                     self.score_input_menu()
                 else:
                     self.high_scores_menu()
-                self.control_sound('play', 'continue')
+                self.audio_manager.control_sound('play', 'continue')
 
         # Game in score input state and button pressed
         elif self.current_state == C.STATE_SCORE_INPUT and pressed:
@@ -1147,14 +1110,14 @@ class FaceInvadersGame():
             # Confirm selected character and proceed to next initial or
             # high scores menu
             self.confirm_char()
-            self.control_sound('play', 'continue')
+            self.audio_manager.control_sound('play', 'continue')
 
         # Game in high score state and button pressed
         elif self.current_state == C.STATE_HIGH_SCORES and pressed:
 
             # Start new game and play continue sound
             self.start_menu()
-            self.control_sound('play', 'continue')
+            self.audio_manager.control_sound('play', 'continue')
 
     def b_button_event(self, pressed=True):
         '''
@@ -1168,12 +1131,12 @@ class FaceInvadersGame():
             # Enable ship thrusing and sound when button pressed
             if pressed:
                 self.ship.thrusting = 1
-                self.control_sound('play', 'ship_thrust', loop=True)
+                self.audio_manager.control_sound('play', 'ship_thrust', loop=True)
 
             # Dissable thrusting and sound when button released
             else:
                 self.ship.thrusting = 0
-                self.control_sound('end', 'ship_thrust')
+                self.audio_manager.control_sound('end', 'ship_thrust')
 
         # Game in score input state and button pressed
         elif self.current_state == C.STATE_SCORE_INPUT and pressed:
@@ -1195,13 +1158,13 @@ class FaceInvadersGame():
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
                 self.ship.thrusting = False
-                self.control_sound('end', 'ship_thrust')
+                self.audio_manager.control_sound('end', 'ship_thrust')
             if self.ship.turning:
                 self.ship.turning = 0
 
             # Show/hide options menu and play continue sound
             self.options_menu()
-            self.control_sound('play', 'continue')
+            self.audio_manager.control_sound('play', 'continue')
 
     def start_button_event(self, pressed=True):
         '''
@@ -1215,13 +1178,13 @@ class FaceInvadersGame():
             # Disable ship thrusting/turning and sound
             if self.ship.thrusting:
                 self.ship.thrusting = False
-                self.control_sound('end', 'ship_thrust')
+                self.audio_manager.control_sound('end', 'ship_thrust')
             if self.ship.turning:
                 self.ship.turning = 0
 
             # Show/hide options menu and play continue sound
             self.controls_menu()
-            self.control_sound('play', 'continue')
+            self.audio_manager.control_sound('play', 'continue')
 
     def left_button_event(self, pressed=True):
         '''
@@ -1240,7 +1203,7 @@ class FaceInvadersGame():
 
             # Update selected option value and play click sound
             self.update_option(decrease=True)
-            self.control_sound('play', 'click')
+            self.audio_manager.control_sound('play', 'click')
 
     def right_button_event(self, pressed=True):
         '''
@@ -1259,7 +1222,7 @@ class FaceInvadersGame():
 
             # Update selected option value and play click sound
             self.update_option()
-            self.control_sound('play', 'click')
+            self.audio_manager.control_sound('play', 'click')
 
     def up_button_event(self, pressed=True):
         '''
@@ -1279,7 +1242,7 @@ class FaceInvadersGame():
 
             # Update initial input with next character
             self.update_char()
-            self.control_sound('play', 'click')
+            self.audio_manager.control_sound('play', 'click')
 
     def down_button_event(self, pressed=True):
         '''
@@ -1299,7 +1262,7 @@ class FaceInvadersGame():
 
             # Update initial input with previous character
             self.update_char(backwards=True)
-            self.control_sound('play', 'click')
+            self.audio_manager.control_sound('play', 'click')
 
 
     def tick(self):
@@ -1344,8 +1307,8 @@ class FaceInvadersGame():
                     if self.ship.is_hit == False and face.detect_hit(self.ship):
 
                             # Play/stop sounds
-                            self.control_sound('stop', 'ship_thrust')
-                            self.control_sound('play', 'ship_explosion')
+                            self.audio_manager.control_sound('stop', 'ship_thrust')
+                            self.audio_manager.control_sound('play', 'ship_explosion')
 
                             # Remove ship from display
                             self.ship.hidden = True
@@ -1372,11 +1335,11 @@ class FaceInvadersGame():
                         # Play explosion sound based on size
                         if self.ship.is_hit == False:
                             if face.size == 1:
-                                self.control_sound('play', 'explosion_large')
+                                self.audio_manager.control_sound('play', 'explosion_large')
                             elif face.size == 2:
-                                self.control_sound('play', 'explosion_medium')
+                                self.audio_manager.control_sound('play', 'explosion_medium')
                             elif face.size == 3:
-                                self.control_sound('play', 'explosion_small')
+                                self.audio_manager.control_sound('play', 'explosion_small')
 
                         # Update score
                         self.score += C.FACE_POINTS[face.size]
@@ -1411,7 +1374,7 @@ class FaceInvadersGame():
                             if blocked == False:
                                 self.ship.reset(x=self.display_center_x, y=self.display_center_y)
                                 self.ship.hidden = False
-                                self.control_sound('play', 'new_ship')
+                                self.audio_manager.control_sound('play', 'new_ship')
 
                     # If zero lives remain
                     else:
@@ -1419,7 +1382,7 @@ class FaceInvadersGame():
                         # Display game over menu
                         self.game_over_time = monotonic()
                         self.game_over()
-                        self.control_sound('play', 'game_over')
+                        self.audio_manager.control_sound('play', 'game_over')
 
             # Process game over game step
             elif self.current_state == C.STATE_GAME_OVER:
