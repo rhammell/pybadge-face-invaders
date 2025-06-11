@@ -1,3 +1,5 @@
+"""Particle effect classes used to draw explosions and bullets."""
+
 from math import sin, cos
 from vectorio import Rectangle, Circle
 from adafruit_display_shapes.line import Line
