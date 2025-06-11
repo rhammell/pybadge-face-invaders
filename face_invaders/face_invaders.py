@@ -281,7 +281,7 @@ class FaceInvadersGame():
         self.main_group.append(self.game_over_group)
         self.game_over_group.hidden = True
 
-        # Crate game over menu text
+        # Create game over menu text
         self.game_over_text_group =Group()
         self.game_over_text_group.append(bitmap_label.Label(
             FONT,
@@ -319,7 +319,7 @@ class FaceInvadersGame():
         ))
         self.score_input_group.append(bitmap_label.Label(
             FONT,
-            text='Enter player intials:',
+            text='Enter player initials:',
             color=self.palette[0],
             anchor_point=(0.5, 0.0),
             anchored_position=(self.display_center_x, 21)
@@ -986,7 +986,7 @@ class FaceInvadersGame():
         # Brightness option is selected
         if self.current_option == 0:
 
-            # Incrase/decrease value
+            # Increase/decrease value
             self.brightness = max(10, min(self.brightness - 10 if decrease else self.brightness + 10, 100))
 
             # Update options menu text
@@ -1106,7 +1106,7 @@ class FaceInvadersGame():
 
     def a_button_event(self, pressed=True):
         '''
-        A Button event function invoked by harware button press or release.
+        A Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
@@ -1158,19 +1158,19 @@ class FaceInvadersGame():
 
     def b_button_event(self, pressed=True):
         '''
-        B Button event function invoked by harware button press or release.
+        B Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
         # Game is in active state and ship is visible
         if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
-            # Enable ship thrusing and sound when button pressed
+            # Enable ship thrusting and sound when button pressed
             if pressed:
                 self.ship.thrusting = 1
                 self.control_sound('play', 'ship_thrust', loop=True)
 
-            # Dissable thrusting and sound when button released
+            # Disable thrusting and sound when button released
             else:
                 self.ship.thrusting = 0
                 self.control_sound('end', 'ship_thrust')
@@ -1185,7 +1185,7 @@ class FaceInvadersGame():
 
     def select_button_event(self, pressed=True):
         '''
-        Select Button event function invoked by harware button press or release.
+        Select Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
@@ -1205,7 +1205,7 @@ class FaceInvadersGame():
 
     def start_button_event(self, pressed=True):
         '''
-        Start Button event function invoked by harware button press or release.
+        Start Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
@@ -1225,14 +1225,14 @@ class FaceInvadersGame():
 
     def left_button_event(self, pressed=True):
         '''
-        Left Button event function invoked by harware button press or release.
+        Left Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
         # Game is in active state and ship is visible
         if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
-            # Set ship turing flag left based on key press or release
+            # Set ship turning flag left based on key press or release
             self.ship.turning = -1  if pressed else 0
 
         # Game in options menu state and button pressed
@@ -1244,14 +1244,14 @@ class FaceInvadersGame():
 
     def right_button_event(self, pressed=True):
         '''
-        Right Button event function invoked by harware button press or release.
+        Right Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
         # Game is in active state and ship is visible
         if self.current_state == C.STATE_ACTIVE_GAME and self.ship.hidden == False:
 
-            # Set ship turing flag right based on key press or release
+            # Set ship turning flag right based on key press or release
             self.ship.turning = 1 if pressed else 0
 
         # Game in options menu state and button pressed
@@ -1263,7 +1263,7 @@ class FaceInvadersGame():
 
     def up_button_event(self, pressed=True):
         '''
-        Up Button event function invoked by harware button press or release.
+        Up Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
@@ -1283,7 +1283,7 @@ class FaceInvadersGame():
 
     def down_button_event(self, pressed=True):
         '''
-        Down Button event function invoked by harware button press or release.
+        Down Button event function invoked by hardware button press or release.
         Processes game event based on current game state
         '''
 
