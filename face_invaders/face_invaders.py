@@ -19,9 +19,7 @@ from face_invaders import high_scores
 
 
 class FaceInvadersGame():
-    '''
-    This class
-    '''
+    """Run the Face Invaders game, managing assets, state, and user input."""
 
     def __init__(self, board):
 

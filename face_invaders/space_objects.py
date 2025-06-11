@@ -1,4 +1,4 @@
-# objects.py - Core game objects for Face Invaders
+"""Core game object classes for Face Invaders."""
 
 from math import sin, cos, radians, pi, sqrt, atan2, degrees
 from time import monotonic

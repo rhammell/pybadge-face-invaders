@@ -1,3 +1,5 @@
+"""Constants used throughout the Face Invaders game."""
+
 # Game state constants
 STATE_START_MENU = 0
 STATE_ACTIVE_GAME = 1

@@ -1,4 +1,4 @@
-# utils.py - Utility functions for Face Invaders
+"""Utility helper functions for Face Invaders."""
 
 def find_overlap_bounds(bounds_1, bounds_2):
     '''

@@ -1,3 +1,5 @@
+"""Audio support classes for the Face Invaders game."""
+
 from digitalio import DigitalInOut
 from audioio import AudioOut
 from audiomixer import Mixer
