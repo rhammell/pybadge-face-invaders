@@ -67,7 +67,7 @@ class FaceInvadersGame():
         self.set_brightness()
         
         # Set and apply initial volume
-        self.volume = 0
+        self.volume = 100
         self.set_volume()
         
         # Initialize game object tracking lists
