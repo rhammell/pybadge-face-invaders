@@ -1,10 +1,8 @@
 """Constants used throughout the Face Invaders game."""
 
-from enum import IntEnum
+class GameState:
+    """Enumerates the possible game states as integers."""
 
-
-class GameState(IntEnum):
-    """Enumerates the possible game states."""
     START_MENU = 0
     ACTIVE_GAME = 1
     OPTIONS_MENU = 2
